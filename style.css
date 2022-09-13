@@ -1,0 +1,128 @@
+.block-container.css-12oz5g7.egzxvld2{
+    padding: 2rem;
+
+}
+.pp-img{
+    width:200px;
+    height: 200px;
+    border-radius: 50%; 
+    margin-left: 45px;
+
+}
+
+.pp-title{
+    text-align: center;
+    font-size: x-large;
+    font-family: Inter;
+    height: 20px;
+}
+.pp-desc{
+    text-align: center;
+    font-size:small;
+    color:  rgb(46, 48, 201);
+    /* padding: 10px; */
+}
+.hello{
+    width:100px;
+    height: 100px;
+}
+
+.title_home{
+    font-size:xx-large;
+    text-align: center;
+    color: rgb(46, 48, 201);
+
+}
+
+.work-date{
+
+    color: lightsteelblue;
+}
+.work-desc{
+    font-size: 20px;
+}
+
+.title_edu{
+
+    font-size:xx-large;
+    text-align: initial;
+    color: rgb(46, 48, 201);
+
+}
+
+
+.resume-title{
+    font-family: Arial Black !important;
+    color:rgb(46, 48, 201);
+    padding-bottom: 0px;
+    margin-bottom: inherit;
+
+}
+
+.hr{
+    height: 3px;
+    background-color: #0043fc;
+    border-top: 3px double #8c8b8b;
+}
+
+.resume-desc{
+    font-size: 15px;
+    
+}
+
+.ul-skills {
+    -webkit-column-count: 2;
+    -moz-column-count: 2;
+    column-count: 2;
+}
+
+.date-resume{
+    color: grey;
+    font-weight:bold;
+}
+
+.card-title{
+    font-size: 40px;
+    text-align: center;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+.date-role { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    grid-gap: 10px;  
+    width: 160%; 
+    /* display: flex;
+    justify-content: flex-end; */
+    
+} 
+.card-subtitle{ 
+    margin: 0px; 
+    /* border: 1px solid red; */
+    width: 200px; 
+    padding-bottom: 0px;
+    margin-bottom: inherit;
+}
+.subtitle{
+    text-align: -moz-center;
+    border-top: 3px double #8c8b8b;
+    border-bottom: 3px double #8c8b8b;
+}
+
+.blog-title{
+    font-size:xx-large;
+    text-align: left;
+    color: rgb(46, 48, 201);
+
+}
+
+.blog-img{
+    border: solid rgb(46, 48, 201);
+    width: 600px;
+    height: 400px;
+}
+
+.blog-text{
+    font-family: 'Courier New', Courier, monospace;
+}

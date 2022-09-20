@@ -49,15 +49,15 @@ def main():
     
     st.markdown("""
             <h3 class = "home-text-p1">While creating this Portofolio I had so much fun  & learned more about the amaizing Streamlit package.</h2>
-            <hr class = "hr">
             <ul>
                 <li>Interest in data analytics and Artificial Intelligence, NLP.</li>
                 <li>Interest in web scrapping and automation.</li>
                 
             </ul> 
-        
-            """, unsafe_allow_html=True)
             
+            <hr class = "hr">
+            """, unsafe_allow_html=True)
+
     st.markdown('<h3 class = "home-text-intro">Thanks for visiting my portfolio.\
      Allow me to introduce myself in order to know me better. you can get more details about me by checking the pages on the left sidebar.</h3>',unsafe_allow_html=True)
 

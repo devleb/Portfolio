@@ -50,6 +50,7 @@ def main():
     st.markdown("""
             <h3 class = "home-text-p1">While creating this Portofolio I had so much fun  & learned more about the amaizing Streamlit package.</h2>
             <ul>
+                <li>Interest in FullStack Web developer.</li>
                 <li>Interest in data analytics and Artificial Intelligence, NLP.</li>
                 <li>Interest in web scrapping and automation.</li>
                 

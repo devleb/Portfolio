@@ -34,7 +34,7 @@ def main():
 
     st.download_button(label="download Resume",
                         data=PDFbyte,
-                        file_name="test.pdf",
+                        file_name="Georges Matta CV.pdf",
                         mime='application/octet-stream')
 
 

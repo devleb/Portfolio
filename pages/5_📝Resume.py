@@ -65,13 +65,12 @@ def main():
             <h2 class = "resume-title">Certificates</h2>
             <hr class = "hr">
             <ul>
-                <li><span class = "date-resume">Issued Apr 2023</span> : Microsoft office specialists outlook associate(office 2019)</li>
-                <li><span class = "date-resume">Issued Mar 2023</span> : Microsoft power platform fundamentals</li>
-                
-                <li><span class = "date-resume">Issued May 2022</span> : Huawei Certification hcia AI</li>
-                <li><span class = "date-resume">Issued Apr 2021</span> : R & Python For Data Analysis</li>
-                <li><span class = "date-resume">Issued May 2019</span> : Python programming & automation</li>
-                <li><span class = "date-resume">Issued Dec 2018 </span>: Django Website Build</li>
+                <li><span class = "date-resume">Apr 2023</span> : Microsoft office specialists outlook associate(office 2019)</li>
+                <li><span class = "date-resume">Mar 2023</span> : Microsoft power platform fundamentals</li>                
+                <li><span class = "date-resume">May 2022</span> : Huawei Certification hcia AI</li>
+                <li><span class = "date-resume">Apr 2021</span> : R & Python For Data Analysis</li>
+                <li><span class = "date-resume">May 2019</span> : Python programming & automation</li>
+                <li><span class = "date-resume">Dec 2018 </span>: Django Website Build</li>
             </ul> 
         
             """, unsafe_allow_html=True)

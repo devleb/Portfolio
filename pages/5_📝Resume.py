@@ -28,7 +28,7 @@ def main():
         unsafe_allow_html=True
     )
 
-    with open("Cv_18-4-2022.pdf", "rb") as pdf_file:
+    with open("My-Cv_4-4-2023.pdf", "rb") as pdf_file:
         PDFbyte = pdf_file.read()
 
 
@@ -65,11 +65,13 @@ def main():
             <h2 class = "resume-title">Certificates</h2>
             <hr class = "hr">
             <ul>
-                <li><span class = "date-resume">June 2022-on going</span> : Front-end (React)</li>
-                <li><span class = "date-resume">March 2022-May 2022</span> : Huawei Certification hcia AI</li>
-                <li><span class = "date-resume">Jan 2021-April 2021</span> : R & Python For Data Analysis</li>
-                <li><span class = "date-resume">Jan 2019-May 2019</span> : Python programming & automation</li>
-                <li><span class = "date-resume">Oct 2018-Dec 2018 </span>: Django Website Build</li>
+                <li><span class = "date-resume">Issued Apr 2023</span> : Microsoft office specialists outlook associate(office 2019)</li>
+                <li><span class = "date-resume">Issued Mar 2023</span> : Microsoft power platform fundamentals</li>
+                
+                <li><span class = "date-resume">Issued May 2022</span> : Huawei Certification hcia AI</li>
+                <li><span class = "date-resume">Issued Apr 2021</span> : R & Python For Data Analysis</li>
+                <li><span class = "date-resume">Issued May 2019</span> : Python programming & automation</li>
+                <li><span class = "date-resume">Issued Dec 2018 </span>: Django Website Build</li>
             </ul> 
         
             """, unsafe_allow_html=True)

@@ -13,7 +13,7 @@ project_list = "projects_list.xlsx"
 def path_to_image_html(path):
     return '<img src="' + path + '" width="60" >'
 
-@st.cache
+@st.cache_data
 def convert_df(input_df):
      # IMPORTANT: Cache the conversion to prevent computation on every rerun
      return input_df.to_html(escape=False, formatters=dict(img=path_to_image_html))

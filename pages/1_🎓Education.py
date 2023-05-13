@@ -42,11 +42,25 @@ tab1.markdown("""
 tab2.subheader("Certificate")
 tab2.markdown("""
         <div class="container-work">
-            <h2 class = "work-title">Front-end (React)</h2>
-            <h4 class = "work-date">June 2022-on going</h4>
+            <h2 class = "work-title">Microsoft office specialists outlook associate(office 2019)</h2>
+            <h4 class = "work-date">Issued Apr 2023</h4>
+            <h4 class = "work-date">Credential ID wEVPC-48Xr</h4>
+            
         </div>
         """, unsafe_allow_html=True)
 
+
+tab2.markdown('---')
+
+tab2.markdown("""
+        <div class="container-work">
+            <h2 class = "work-title">Microsoft power platform fundamentals</h2>
+            <h4 class = "work-date">Issued Mar 2023</h4>
+            <h4 class = "work-date">Credential ID wBrMA-2Fb6</h4>
+            
+        </div>
+        """, unsafe_allow_html=True)
+        
 tab2.markdown('---')
 
 tab2.markdown("""

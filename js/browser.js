@@ -30,12 +30,12 @@
   };
   const SCHEME = "devleb://";
 
-  // Every page is a moment in time. n is the year the counter travels to; label is what the clock shows.
+  // Every page is a moment in time. n is the year the counter travels to; label is the year shown on the dial.
   // Pages with an earlier year are reached by travelling back, later ones by travelling ahead.
   const YEAR = new Date().getFullYear();
   const ERA = {
     education:  { n: 2009, label: "2009" },
-    experience: { n: YEAR - 0.5, label: String(YEAR) }, // opens on the latest role; the clock then follows the scroll
+    experience: { n: YEAR - 0.5, label: String(YEAR) }, // opens on the latest role; the dial's year then follows the scroll
     projects:   { n: 2017, label: "2017" },
     resume:     { n: 2023, label: "2023" },
     home:       { n: YEAR, label: "NOW" },
@@ -820,7 +820,7 @@
     if (entry.key === "experience") this._expYear(true);
   };
 
-  /* Experience: the era clock shows the year of the role being read.
+  /* Experience: the dial shows the year of the role being read.
      Reading down a role runs its years backwards (end year → start year). */
   Browser.prototype._expYear = function (force) {
     const items = [...this.page.querySelectorAll(".timeline > li[data-from]")];

@@ -54,9 +54,9 @@ Each page is a moment in time, defined by `ERA` at the top of `js/browser.js`:
 | Projects | 2017 | Blog | ∞ |
 | Resume | 2023 | | |
 
-The Home tab's centrepiece is the **delivery roadmap dial**: a ring that fills up one step at a time (spec, build, test, ship), on the laptop screen at the desk and again inside the browser. Edit the phases, step counts and colours in `delivery` in `js/content.js`. The Experience clock shows the year of the role being read as you scroll.
+Every page shows the **delivery roadmap dial**: a ring that fills up one step at a time (spec, build, test, ship), with that page's year on its face (NOW on Home). It is also on the laptop screen at the desk. Edit the phases, step counts and colours in `delivery` in `js/content.js`. On the Experience page the year follows the role being read as you scroll.
 
-Switching tabs runs a year counter from one era to the other. The tunnel twists one way going back and the other way going forward, and the clock hands follow. Change the years in `ERA` to whatever suits you.
+Switching tabs runs a year counter from one era to the other. The tunnel twists one way going back and the other way going forward. Change the years in `ERA` to whatever suits you.
 
 ## Structure
 
@@ -65,7 +65,7 @@ index.html          page shell
 css/style.css       all styling
 js/content.js       all portfolio content
 js/desk-scene.js    the desk, laptop, lamp and fly-in camera
-js/time-scene.js    clock tunnel, era clocks and the time jump between pages
+js/time-scene.js    time tunnel, the roadmap dial and the time jump between pages
 js/browser.js       tabs, address bar, history and every page
 js/main.js          ties it together (intro, enter/exit, input)
 ```

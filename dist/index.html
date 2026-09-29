@@ -2115,43 +2115,11 @@ window.CONTENT = {
     });
   }
 
-  // the enamel face of an era clock, with its year label
-  function faceTexture(label, cfg, size = 1024) {
-    return tex(size, size, (g, w) => drawFace(g, w, label, cfg));
-  }
-  function drawFace(g, w, label, cfg) {
-    {
-      g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, w);
-      g.scale(w / 1024, w / 1024); w = 1024;
-      const c = w / 2;
-      const bg = g.createRadialGradient(c * 0.8, c * 0.7, 40, c, c, c);
-      bg.addColorStop(0, "#1d2440"); bg.addColorStop(1, "#070a16");
-      g.fillStyle = bg; g.beginPath(); g.arc(c, c, c, 0, TAU); g.fill();
-      g.strokeStyle = rgba(cfg.metal, 0.6);
-      for (let i = 0; i < 60; i++) {
-        const a = (i / 60) * TAU, major = i % 5 === 0;
-        g.lineWidth = major ? 8 : 3;
-        g.beginPath();
-        g.moveTo(c + Math.cos(a) * (c - 30), c + Math.sin(a) * (c - 30));
-        g.lineTo(c + Math.cos(a) * (c - (major ? 90 : 55)), c + Math.sin(a) * (c - (major ? 90 : 55)));
-        g.stroke();
-      }
-      g.fillStyle = rgba(cfg.metal, 0.85);
-      g.font = "600 70px Georgia, 'Times New Roman', serif";
-      g.textAlign = "center"; g.textBaseline = "middle";
-      [0, 3, 6, 9].forEach(i => { const a = (i / 12) * TAU - Math.PI / 2; g.fillText(ROMAN[i], c + Math.cos(a) * (c - 160), c + Math.sin(a) * (c - 160)); });
-      g.fillStyle = rgba(cfg.tint, 1);
-      g.font = `700 ${label.length > 4 ? 120 : 150}px 'Unbounded', 'Instrument Sans', system-ui, sans-serif`;
-      g.fillText(label, c, c + 220);
-    }
-  }
-
   function TimeScene(renderer, opts) {
     this.renderer = renderer;
     this.mobile = opts.mobile;
     this.reduced = opts.reducedMotion;
     this.S = this.mobile ? 512 : 1024; // texture size
-    this.dialCache = {};
     this.scene = new T.Scene();
     this.bg = new T.Color("#0a0e1a");
     this.scene.background = this.bg.clone();
@@ -2163,6 +2131,7 @@ window.CONTENT = {
     this.pointer = new T.Vector2(); this.pointerSmooth = new T.Vector2();
     this.scroll = 0; this.scrollSmooth = 0;
     this.nudge = 0;
+    this.rm = { n: 0, t: 0, total: 0 };   // delivery roadmap progress, shared by every page's dial
     this.cache = {};
     this.labels = opts.labels || {};
     this.warp = null;
@@ -2239,8 +2208,9 @@ window.CONTENT = {
   // ---------- era clocks ----------
   /* The Home centrepiece: a delivery roadmap dial. A ring of segments fills up step by step
      (spec → build → test → ship) around a face that names the current phase. */
-  TimeScene.prototype._makeChain = function () {
-    const cfg = MARKERS.home, D = window.CONTENT.delivery;
+  TimeScene.prototype._makeChain = function (key) {
+    const cfg = MARKERS[key] || MARKERS.notfound, D = window.CONTENT.delivery;
+    let year = this.labels[key] || "????";   // the page's year (or NOW / NEXT), shown on the face
     const total = D.phases.reduce((a, p) => a + p.blocks, 0);
     const phaseOf = i => { let k = 0; for (const p of D.phases) { k += p.blocks; if (i < k) return p; } return D.phases[D.phases.length - 1]; };
     const metal = new T.MeshStandardMaterial({ color: cfg.metal, metalness: 0.55, roughness: 0.32, emissive: cfg.metal, emissiveIntensity: 0.08 });
@@ -2252,7 +2222,8 @@ window.CONTENT = {
     // the face: names the phase and counts the steps
     const cv = document.createElement("canvas"); cv.width = cv.height = this.S;
     const faceMap = new T.CanvasTexture(cv); faceMap.encoding = T.sRGBEncoding; faceMap.anisotropy = 4;
-    const S = { n: this.reduced ? total - 4 : 4, t: 0 };
+    const S = this.rm;
+    if (!S.total) { S.total = total; S.n = this.reduced ? total - 4 : 4; }
     const RING = 0.863;   // the progress ring sits at this fraction of the dial radius
     const paint = () => {
       const c2 = cv.getContext("2d"), w = 1024, c = w / 2, n = S.n, done = n >= total;
@@ -2269,17 +2240,21 @@ window.CONTENT = {
       }
       const ph = phaseOf(Math.max(0, Math.min(total - 1, n - 1)));
       c2.textAlign = "center"; c2.textBaseline = "middle";
-      c2.fillStyle = "rgba(234,230,218,.6)"; c2.font = "500 46px 'Instrument Sans', system-ui, sans-serif";
-      c2.fillText(D.title.toUpperCase(), c, c - 170);
+      c2.fillStyle = "rgba(234,230,218,.6)"; c2.font = "500 40px 'Instrument Sans', system-ui, sans-serif";
+      c2.fillText(D.title.toUpperCase(), c, c - 225);
       c2.fillStyle = done ? "#f6c98a" : ph.color;
-      c2.font = `700 ${done ? 100 : 160}px 'Unbounded', 'Instrument Sans', system-ui, sans-serif`;
-      c2.fillText(done ? "DELIVERED" : ph.name.toUpperCase(), c, c - 10);
-      c2.fillStyle = "rgba(234,230,218,.9)"; c2.font = "600 74px 'Instrument Sans', system-ui, sans-serif";
-      c2.fillText(`${String(n).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, c, c + 150);
+      c2.font = `700 ${done ? 84 : 128}px 'Unbounded', 'Instrument Sans', system-ui, sans-serif`;
+      c2.fillText(done ? "DELIVERED" : ph.name.toUpperCase(), c, c - 110);
+      c2.fillStyle = "rgba(234,230,218,.9)"; c2.font = "600 60px 'Instrument Sans', system-ui, sans-serif";
+      c2.fillText(`${String(n).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, c, c + 78);
+      // the year sits where the clock used to show it
+      c2.fillStyle = rgba(cfg.tint, 1);
+      c2.font = `700 ${year.length > 4 ? 100 : 128}px 'Unbounded', 'Instrument Sans', system-ui, sans-serif`;
+      c2.fillText(year, c, c + 220);
       faceMap.needsUpdate = true;
     };
     const SEG_GAP = 0.05;
-    body.add(new T.Mesh(new T.CircleGeometry(FR, 96), new T.MeshStandardMaterial({ map: faceMap, roughness: 0.5, metalness: 0.1 })));
+    body.add(new T.Mesh(new T.CircleGeometry(FR, 96), new T.MeshBasicMaterial({ map: faceMap, toneMapped: false })));   // unlit, so it looks the same as on the laptop screen
     body.add(new T.Mesh(new T.TorusGeometry(FR + 0.15, 0.18, 16, 120), metal));
 
     // the step being worked on glows and pulses on top of its segment
@@ -2303,86 +2278,31 @@ window.CONTENT = {
     const dial = new T.Mesh(new T.PlaneGeometry(15.4, 15.4), new T.MeshBasicMaterial({ map: dashed, transparent: true, opacity: 0.8, depthWrite: false }));
     dial.position.z = -0.05; body.add(dial);
 
-    // scanning arm and a small marker that circle the dial
-    const AL = FR * 0.86;
-    const arm = new T.Group(); arm.position.z = 0.2;
-    const bar = new T.Mesh(new T.BoxGeometry(0.1, AL, 0.06), new T.MeshStandardMaterial({ color: "#f2a541", emissive: "#f2a541", emissiveIntensity: 0.6 })); bar.position.y = AL / 2; arm.add(bar);
-    const tip = new T.Mesh(new T.SphereGeometry(0.2, 16, 12), metal); tip.position.y = AL; arm.add(tip);
-    const cap = new T.Mesh(new T.SphereGeometry(0.3, 20, 14), metal); cap.position.z = 0.05; arm.add(cap);
-    body.add(arm);
-    const nonce = new T.Group(); nonce.position.z = 0.12; const nb = new T.Mesh(new T.SphereGeometry(0.15, 12, 10), metal); nb.position.y = FR * 0.74; nonce.add(nb); body.add(nonce);
+    // No hands and no orbit rings: the dial stays a flat circle facing the viewer, like the one on the laptop screen.
+    // These empty pivots are only kept so the shared update loop needs no special case.
+    const arm = new T.Group(), nonce = new T.Group(), arms = [new T.Group(), new T.Group()];
 
-    const arms = [0.9, -0.6].map((tilt, i) => {
-      const pivot = new T.Group(); pivot.rotation.x = tilt; pivot.rotation.y = i ? 0.8 : -0.4;
-      pivot.add(new T.Mesh(new T.TorusGeometry(7.4 + i * 0.7, 0.06, 8, 140), metal)); g.add(pivot); return pivot;
-    });
-
-    g.rotation.set(0.12, -0.38, 0);
-    const u = g.userData = { chain: true, hour: nonce, minute: arm, dial, arms, spin: 0, faceMap, cfg, label: "", glow, pop: 0 };
-    u.tick = dt => {
-      if (!this.reduced) {
-        S.t += dt;
-        if (S.n < total) { if (S.t >= 1.0) { S.t = 0; S.n++; u.pop = 1; paint(); placePulse(); } }
-        else if (S.t >= 2.4) { S.t = 0; S.n = 0; paint(); placePulse(); }
-      }
+    const u = g.userData = { chain: true, hour: nonce, minute: arm, dial, arms, spin: 0, faceMap, cfg, label: year, glow, pop: 0, seen: S.n };
+    u.setYear = label => { year = label; u.label = label; paint(); };
+    u.tick = () => {
+      if (u.seen !== S.n) { const up = S.n > u.seen; u.seen = S.n; paint(); placePulse(); if (up) u.pop = 1; }
       pulse.material.opacity = 0.3 + 0.25 * Math.sin(this.clock * 6);
     };
     paint(); placePulse();
     return g;
   };
 
-  TimeScene.prototype._makeMarker = function (key) {
-    if (key === "home") return this._makeChain();
-    const cfg = MARKERS[key] || MARKERS.notfound;
-    const label = this.labels[key] || "????";
-    const g = new T.Group();
-    const metal = new T.MeshStandardMaterial({ color: cfg.metal, metalness: 0.55, roughness: 0.32, emissive: cfg.metal, emissiveIntensity: 0.08 });
+  TimeScene.prototype._makeMarker = function (key) { return this._makeChain(key); };
 
-    const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTexture(cfg.tint), transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
-    glow.scale.setScalar(26); g.add(glow);
-
-    const body = new T.Group(); g.add(body);
-    const faceMap = faceTexture(label, cfg, this.S);
-    const face = new T.Mesh(new T.CircleGeometry(4.3, 72), new T.MeshStandardMaterial({ map: faceMap, roughness: 0.5, metalness: 0.1 }));
-    body.add(face);
-    const rim = new T.Mesh(new T.TorusGeometry(4.45, 0.22, 16, 96), metal); body.add(rim);
-    const dialMap = this.dialCache[cfg.metal] || (this.dialCache[cfg.metal] = dialTexture(0, cfg.metal, this.S));
-    const dial = new T.Mesh(new T.PlaneGeometry(12.6, 12.6), new T.MeshBasicMaterial({ map: dialMap, transparent: true, opacity: 0.85, depthWrite: false }));
-    dial.position.z = -0.05; body.add(dial);
-    const outer = new T.Mesh(new T.TorusGeometry(6.3, 0.09, 12, 120), metal); body.add(outer);
-
-    // hands pivot at the centre
-    const mkHand = (w, len, z) => {
-      const pivot = new T.Group(); pivot.position.z = z;
-      const h = new T.Mesh(new T.BoxGeometry(w, len, 0.08), metal); h.position.y = len / 2 - 0.3;
-      pivot.add(h); body.add(pivot); return pivot;
-    };
-    const hour = mkHand(0.28, 2.4, 0.12), minute = mkHand(0.16, 3.5, 0.2);
-    const cap = new T.Mesh(new T.SphereGeometry(0.32, 20, 14), metal); cap.position.z = 0.25; body.add(cap);
-
-    // armillary rings orbiting the clock
-    const arms = [0.9, -0.6].map((tilt, i) => {
-      const pivot = new T.Group(); pivot.rotation.x = tilt; pivot.rotation.y = i ? 0.8 : -0.4;
-      const ring = new T.Mesh(new T.TorusGeometry(7.4 + i * 0.7, 0.06, 8, 140), metal);
-      pivot.add(ring); g.add(pivot); return pivot;
-    });
-
-    g.rotation.set(0.12, -0.38, 0);
-    g.userData = { hour, minute, dial, arms, spin: 0, faceMap, cfg, label, glow, pop: 0 };
-    return g;
-  };
-
-  // repaint the year on a clock face (the Experience clock follows the scroll)
+  // repaint the year on a page's dial (the Experience dial follows the scroll)
   TimeScene.prototype._paint = function (m, label) {
     const u = m.userData;
-    if (u.chain || u.label === label) return false;
-    const cv = u.faceMap.image;
-    drawFace(cv.getContext("2d"), cv.width, label, u.cfg);
-    u.faceMap.needsUpdate = true; u.label = label;
+    if (u.label === label) return false;
+    u.setYear(label);
     return true;
   };
-  /* Show another year on a page's clock. dir: -1 into the past, +1 into the future;
-     the hands whirl that way and the clock pulses. */
+  /* Show another year on a page's dial. dir: -1 into the past, +1 into the future;
+     the arm whirls that way and the dial pulses. */
   TimeScene.prototype.setLabel = function (key, label, dir) {
     const m = this._marker(key);
     if (!this._paint(m, label) || this.reduced || !dir) return;
@@ -2528,9 +2448,16 @@ window.CONTENT = {
       u.hour.rotation.z += (dt * spin) / 12;
       u.dial.rotation.z += dt * (0.03 - this.dir * this.speed * 0.05);
       u.arms[0].rotation.z += dt * 0.25; u.arms[1].rotation.z -= dt * 0.18;
-      if (u.tick) u.tick(dt);
+      if (u.chain) m.quaternion.copy(this.camera.quaternion);   // parallel to the screen, so the dial is always a true circle
+      if (u.tick) u.tick();
       if (u.pop > 0.001) { u.pop *= Math.exp(-dt * 4); u.glow.scale.setScalar(26 * (1 + 0.3 * u.pop)); }
     });
+    const rm = this.rm;   // one step per second, then a short pause on DELIVERED
+    if (rm.total && !this.reduced) {
+      rm.t += dt;
+      if (rm.n < rm.total) { if (rm.t >= 1) { rm.t = 0; rm.n++; } }
+      else if (rm.t >= 2.4) { rm.t = 0; rm.n = 0; }
+    }
     this.nudge *= Math.exp(-dt * 3);
     if (this.current && !w) {
       this.scrollSmooth += (this.scroll - this.scrollSmooth) * Math.min(1, dt * 4);
@@ -2603,12 +2530,12 @@ window.CONTENT = {
   };
   const SCHEME = "devleb://";
 
-  // Every page is a moment in time. n is the year the counter travels to; label is what the clock shows.
+  // Every page is a moment in time. n is the year the counter travels to; label is the year shown on the dial.
   // Pages with an earlier year are reached by travelling back, later ones by travelling ahead.
   const YEAR = new Date().getFullYear();
   const ERA = {
     education:  { n: 2009, label: "2009" },
-    experience: { n: YEAR - 0.5, label: String(YEAR) }, // opens on the latest role; the clock then follows the scroll
+    experience: { n: YEAR - 0.5, label: String(YEAR) }, // opens on the latest role; the dial's year then follows the scroll
     projects:   { n: 2017, label: "2017" },
     resume:     { n: 2023, label: "2023" },
     home:       { n: YEAR, label: "NOW" },
@@ -3393,7 +3320,7 @@ window.CONTENT = {
     if (entry.key === "experience") this._expYear(true);
   };
 
-  /* Experience: the era clock shows the year of the role being read.
+  /* Experience: the dial shows the year of the role being read.
      Reading down a role runs its years backwards (end year → start year). */
   Browser.prototype._expYear = function (force) {
     const items = [...this.page.querySelectorAll(".timeline > li[data-from]")];

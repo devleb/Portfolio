@@ -197,7 +197,121 @@
   };
 
   // ---------- era clocks ----------
+  /* The Home centrepiece: a ring of blocks, one per delivery step, mined one after another
+     (spec → build → test → ship) around a face that names the current phase. */
+  TimeScene.prototype._makeChain = function () {
+    const cfg = MARKERS.home, D = window.CONTENT.delivery;
+    const total = D.phases.reduce((a, p) => a + p.blocks, 0);
+    const phaseOf = i => { let k = 0; for (const p of D.phases) { k += p.blocks; if (i < k) return p; } return D.phases[D.phases.length - 1]; };
+    const hash = n => { let x = Math.imul(n + 7, 2654435761) >>> 0; x ^= x >>> 13; x = Math.imul(x, 1274126177) >>> 0; return (x ^ (x >>> 16)).toString(16).padStart(8, "0"); };
+    const metal = new T.MeshStandardMaterial({ color: cfg.metal, metalness: 0.55, roughness: 0.32, emissive: cfg.metal, emissiveIntensity: 0.08 });
+    const g = new T.Group(), body = new T.Group(); g.add(body);
+    const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTexture(cfg.tint), transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
+    glow.scale.setScalar(26); glow.position.z = -2; g.add(glow);   // behind the blocks, so it tints nothing
+
+    // the face: names the phase, counts the blocks and shows the latest hash
+    const cv = document.createElement("canvas"); cv.width = cv.height = this.S;
+    const faceMap = new T.CanvasTexture(cv); faceMap.encoding = T.sRGBEncoding; faceMap.anisotropy = 4;
+    const S = { n: this.reduced ? total - 4 : 4, t: 0 };
+    const paint = () => {
+      const c2 = cv.getContext("2d"), w = 1024, c = w / 2, n = S.n, done = n >= total;
+      c2.setTransform(1, 0, 0, 1, 0, 0); c2.clearRect(0, 0, cv.width, cv.height); c2.scale(cv.width / w, cv.width / w);
+      const bg = c2.createRadialGradient(c * 0.8, c * 0.7, 40, c, c, c);
+      bg.addColorStop(0, "#1d2440"); bg.addColorStop(1, "#070a16");
+      c2.fillStyle = bg; c2.beginPath(); c2.arc(c, c, c, 0, TAU); c2.fill();
+      // progress ring, one segment per block
+      const gap = 0.05;
+      for (let i = 0; i < total; i++) {
+        const a0 = (i / total) * TAU - Math.PI / 2 + gap, a1 = ((i + 1) / total) * TAU - Math.PI / 2 - gap;
+        c2.lineWidth = 34; c2.lineCap = "butt";
+        c2.strokeStyle = i < n ? phaseOf(i).color : "rgba(201,162,94,.16)";
+        c2.beginPath(); c2.arc(c, c, c - 70, a0, a1); c2.stroke();
+      }
+      const ph = phaseOf(Math.max(0, Math.min(total - 1, n - 1)));
+      c2.textAlign = "center"; c2.textBaseline = "middle";
+      c2.fillStyle = "rgba(234,230,218,.6)"; c2.font = "500 46px 'Instrument Sans', system-ui, sans-serif";
+      c2.fillText(D.title.toUpperCase(), c, c - 190);
+      c2.fillStyle = done ? "#f6c98a" : ph.color;
+      c2.font = `700 ${done ? 100 : 160}px 'Unbounded', 'Instrument Sans', system-ui, sans-serif`;
+      c2.fillText(done ? "DELIVERED" : ph.name.toUpperCase(), c, c - 10);
+      c2.fillStyle = "rgba(234,230,218,.9)"; c2.font = "600 64px 'Instrument Sans', system-ui, sans-serif";
+      c2.fillText(`${String(n).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, c, c + 130);
+      c2.fillStyle = "rgba(124,199,180,.85)"; c2.font = "500 44px ui-monospace, Menlo, Consolas, monospace";
+      c2.fillText("0x" + hash(n), c, c + 215);
+      faceMap.needsUpdate = true;
+    };
+    body.add(new T.Mesh(new T.CircleGeometry(4.0, 72), new T.MeshStandardMaterial({ map: faceMap, roughness: 0.5, metalness: 0.1 })));
+    const rim = new T.Mesh(new T.TorusGeometry(4.15, 0.16, 16, 96), metal); body.add(rim);
+
+    // a dashed orbit around the chain
+    const dashed = tex(this.S, this.S, (c2, w) => {
+      c2.scale(w / 1024, w / 1024); c2.strokeStyle = rgba(cfg.metal, 0.6); c2.lineWidth = 5; c2.setLineDash([14, 22]);
+      c2.beginPath(); c2.arc(512, 512, 0.43 * 1024, 0, TAU); c2.stroke();
+    });
+    const dial = new T.Mesh(new T.PlaneGeometry(15.2, 15.2), new T.MeshBasicMaterial({ map: dashed, transparent: true, opacity: 0.8, depthWrite: false }));
+    dial.position.z = -0.05; body.add(dial);
+
+    // the chain: blocks around the face, joined by links
+    const RAD = 5.4, blocks = [], links = [];
+    const boxG = new T.BoxGeometry(1.5, 1.5, 0.6), linkG = new T.BoxGeometry(1.55, 0.12, 0.12);
+    const frameG = new T.PlaneGeometry(1.38, 1.38), innerG = new T.PlaneGeometry(0.9, 0.9);
+    const slab = new T.MeshStandardMaterial({ color: "#0d1428", metalness: 0.3, roughness: 0.6 });
+    const flat = c => new T.MeshBasicMaterial({ color: c, toneMapped: false });   // unlit, so the phase colours stay true
+    for (let i = 0; i < total; i++) {
+      const th = (i / total) * TAU, col = new T.Color(phaseOf(i).color);
+      const m = new T.Mesh(boxG, slab);
+      m.position.set(Math.sin(th) * RAD, Math.cos(th) * RAD, 0); m.rotation.z = -th;
+      const front = new T.Mesh(frameG, flat("#16203c")); front.position.z = 0.302; m.add(front);
+      const inner = new T.Mesh(innerG, flat("#0a1020")); inner.position.z = 0.304; m.add(inner);
+      body.add(m); blocks.push({ m, front, inner, k: 0, col });
+      const tm = ((i + 0.5) / total) * TAU, cr = RAD * Math.cos(Math.PI / total);
+      const l = new T.Mesh(linkG, new T.MeshBasicMaterial({ color: "#2a3350", toneMapped: false }));
+      l.position.set(Math.sin(tm) * cr, Math.cos(tm) * cr, 0); l.rotation.z = -tm;
+      body.add(l); links.push(l);
+    }
+    const dimFrame = new T.Color("#16203c"), dimInner = new T.Color("#0a1020"), dimLink = new T.Color("#2a3350");
+    const paintChain = dt => {
+      blocks.forEach((b, i) => {
+        const on = i < S.n, newest = i === S.n - 1 && S.n < total;
+        const target = newest ? 0.75 + 0.25 * Math.sin(this.clock * 6) : on ? 0.85 : 0;
+        b.k += (target - b.k) * Math.min(1, dt * 10);
+        b.front.material.color.copy(dimFrame).lerp(b.col, b.k);
+        b.inner.material.color.copy(dimInner).lerp(b.col, b.k * 0.32);
+        b.m.scale.setScalar(1 + (newest ? 0.12 * Math.sin(this.clock * 6) + 0.08 : 0));
+        const lOn = i + 1 < S.n + (S.n >= total ? 1 : 0);
+        links[i].material.color.copy(dimLink).lerp(b.col, lOn ? 0.9 : 0);
+      });
+    };
+
+    // scanning arm and a small marker that circle the chain
+    const arm = new T.Group(); arm.position.z = 0.2;
+    const bar = new T.Mesh(new T.BoxGeometry(0.1, 3.6, 0.06), new T.MeshStandardMaterial({ color: "#f2a541", emissive: "#f2a541", emissiveIntensity: 0.6 })); bar.position.y = 1.8; arm.add(bar);
+    const tip = new T.Mesh(new T.SphereGeometry(0.2, 16, 12), metal); tip.position.y = 3.6; arm.add(tip);
+    const cap = new T.Mesh(new T.SphereGeometry(0.3, 20, 14), metal); cap.position.z = 0.05; arm.add(cap);
+    body.add(arm);
+    const nonce = new T.Group(); nonce.position.z = 0.12; const nb = new T.Mesh(new T.SphereGeometry(0.15, 12, 10), metal); nb.position.y = 3.4; nonce.add(nb); body.add(nonce);
+
+    const arms = [0.9, -0.6].map((tilt, i) => {
+      const pivot = new T.Group(); pivot.rotation.x = tilt; pivot.rotation.y = i ? 0.8 : -0.4;
+      pivot.add(new T.Mesh(new T.TorusGeometry(7.4 + i * 0.7, 0.06, 8, 140), metal)); g.add(pivot); return pivot;
+    });
+
+    g.rotation.set(0.12, -0.38, 0);
+    const u = g.userData = { chain: true, hour: nonce, minute: arm, dial, arms, spin: 0, faceMap, cfg, label: "", glow, pop: 0 };
+    u.tick = dt => {
+      if (!this.reduced) {
+        S.t += dt;
+        if (S.n < total) { if (S.t >= 1.0) { S.t = 0; S.n++; u.pop = 1; paint(); } }
+        else if (S.t >= 2.4) { S.t = 0; S.n = 0; paint(); }
+      }
+      paintChain(dt);
+    };
+    paint(); blocks.forEach((b, i) => { b.k = i < S.n ? 0.85 : 0; });
+    return g;
+  };
+
   TimeScene.prototype._makeMarker = function (key) {
+    if (key === "home") return this._makeChain();
     const cfg = MARKERS[key] || MARKERS.notfound;
     const label = this.labels[key] || "????";
     const g = new T.Group();
@@ -240,7 +354,7 @@
   // repaint the year on a clock face (the Experience clock follows the scroll)
   TimeScene.prototype._paint = function (m, label) {
     const u = m.userData;
-    if (u.label === label) return false;
+    if (u.chain || u.label === label) return false;
     const cv = u.faceMap.image;
     drawFace(cv.getContext("2d"), cv.width, label, u.cfg);
     u.faceMap.needsUpdate = true; u.label = label;
@@ -393,6 +507,7 @@
       u.hour.rotation.z += (dt * spin) / 12;
       u.dial.rotation.z += dt * (0.03 - this.dir * this.speed * 0.05);
       u.arms[0].rotation.z += dt * 0.25; u.arms[1].rotation.z -= dt * 0.18;
+      if (u.tick) u.tick(dt);
       if (u.pop > 0.001) { u.pop *= Math.exp(-dt * 4); u.glow.scale.setScalar(26 * (1 + 0.3 * u.pop)); }
     });
     this.nudge *= Math.exp(-dt * 3);

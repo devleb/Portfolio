@@ -278,6 +278,18 @@ window.CONTENT = {
       { name: "Postmortems" } ] }
   ],
 
+  /* Delivery chain: the centrepiece of the Home page. One block is "mined" per step, phase by phase.
+     Change the names, the number of blocks per phase or the colours here. */
+  delivery: {
+    title: "Delivery chain",
+    phases: [
+      { name: "Spec", blocks: 3, color: "#f2a541" },
+      { name: "Build", blocks: 4, color: "#7cc7b4" },
+      { name: "Test", blocks: 3, color: "#a594e0" },
+      { name: "Ship", blocks: 2, color: "#7fd4ff" }
+    ]
+  },
+
   links: [
     { id: "email", label: "Email me", sub: "testdevleb@gmail.com", url: "mailto:testdevleb@gmail.com" },
     { id: "linkedin", label: "LinkedIn", sub: "georges-matta", url: "https://www.linkedin.com/in/georges-matta-2a62a217b/" },

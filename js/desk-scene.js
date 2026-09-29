@@ -720,35 +720,56 @@
     });
     const L = this.loc, rtl = !!L.rtl, fx = x => (rtl ? w - x : x);      // fx mirrors a position for right-to-left
     const FONT = "'Instrument Sans', system-ui, sans-serif";
-    // time dial: a brass-rimmed clock whose minute hand runs backwards
+    // delivery chain: a ring of blocks mined one after another (spec, build, test, ship)
     const px = w * (rtl ? 0.23 : 0.77), py = h * 0.58, pr = 150;
+    const D = window.CONTENT.delivery, tot = D.phases.reduce((a, p) => a + p.blocks, 0);
+    const phaseOf = i => { let k = 0; for (const p of D.phases) { k += p.blocks; if (i < k) return p; } return D.phases[D.phases.length - 1]; };
+    const nOn = this.reduced ? tot - 4 : Math.min(tot, Math.floor(t % (tot + 3)) + 1), done = nOn >= tot;
     const halo = g.createRadialGradient(px, py, pr * 0.7, px, py, pr * 2.1);
-    halo.addColorStop(0, "rgba(242,165,65,.32)"); halo.addColorStop(1, "rgba(242,165,65,0)");
+    halo.addColorStop(0, "rgba(242,165,65,.28)"); halo.addColorStop(1, "rgba(242,165,65,0)");
     g.fillStyle = halo; g.fillRect(0, 0, w, h);
     g.lineWidth = 2;
-    for (let i = 1; i <= 5; i++) {
-      g.strokeStyle = `rgba(201,162,94,${0.34 - i * 0.05})`;
+    for (let i = 1; i <= 3; i++) {
+      g.strokeStyle = `rgba(201,162,94,${0.34 - i * 0.07})`;
       g.setLineDash([7, 11]); g.lineDashOffset = t * 14 * (i % 2 ? 1 : -1);
-      g.beginPath(); g.arc(px, py, pr * (1 + i * 0.3), 0, TAU); g.stroke();
+      g.beginPath(); g.arc(px, py, pr * (1.25 + i * 0.28), 0, TAU); g.stroke();
     }
     g.setLineDash([]);
     const face = g.createRadialGradient(px - 40, py - 50, 10, px, py, pr);
     face.addColorStop(0, "#242d55"); face.addColorStop(1, "#090d1d");
-    g.fillStyle = face; g.beginPath(); g.arc(px, py, pr, 0, TAU); g.fill();
-    g.strokeStyle = "#c9a25e"; g.lineWidth = 9; g.beginPath(); g.arc(px, py, pr, 0, TAU); g.stroke();
-    for (let i = 0; i < 60; i++) {
-      const a = (i / 60) * TAU, major = i % 5 === 0, r1 = pr - 12, r2 = pr - (major ? 36 : 22);
-      g.strokeStyle = major ? "#f6c98a" : "rgba(201,162,94,.6)"; g.lineWidth = major ? 4 : 2;
-      g.beginPath(); g.moveTo(px + Math.cos(a) * r1, py + Math.sin(a) * r1); g.lineTo(px + Math.cos(a) * r2, py + Math.sin(a) * r2); g.stroke();
+    g.fillStyle = face; g.beginPath(); g.arc(px, py, pr * 0.74, 0, TAU); g.fill();
+    g.strokeStyle = "#c9a25e"; g.lineWidth = 6; g.beginPath(); g.arc(px, py, pr * 0.74, 0, TAU); g.stroke();
+    // progress ring inside the chain, one segment per block
+    for (let i = 0; i < tot; i++) {
+      const a0 = (i / tot) * TAU - Math.PI / 2 + 0.05, a1 = ((i + 1) / tot) * TAU - Math.PI / 2 - 0.05;
+      g.lineWidth = 9; g.strokeStyle = i < nOn ? phaseOf(i).color : "rgba(201,162,94,.16)";
+      g.beginPath(); g.arc(px, py, pr * 0.62, a0, a1); g.stroke();
     }
-    const hand = (a, len, wd, col) => {
-      g.strokeStyle = col; g.lineWidth = wd; g.lineCap = "round";
-      g.beginPath(); g.moveTo(px, py); g.lineTo(px + Math.sin(a) * len, py - Math.cos(a) * len); g.stroke();
-    };
-    hand(-t * 0.05 + 0.9, pr * 0.5, 9, "#eae6da");
-    hand(-t * 0.6, pr * 0.78, 5, "#f2a541");
-    g.lineCap = "butt";
-    g.fillStyle = "#f2a541"; g.beginPath(); g.arc(px, py, 9, 0, TAU); g.fill();
+    // the blocks and their links
+    const bs = 36, rr = pr * 1.02;
+    for (let i = 0; i < tot; i++) {
+      const th = (i / tot) * TAU, on = i < nOn, newest = i === nOn - 1 && !done, col = phaseOf(i).color;
+      const tm = ((i + 0.5) / tot) * TAU, cr = rr * Math.cos(Math.PI / tot);
+      g.strokeStyle = on && (i + 1 < nOn || done) ? col : "rgba(201,162,94,.28)"; g.lineWidth = 4;
+      g.beginPath(); g.moveTo(px + Math.sin(tm) * cr - Math.cos(tm) * 16, py - Math.cos(tm) * cr - Math.sin(tm) * 16);
+      g.lineTo(px + Math.sin(tm) * cr + Math.cos(tm) * 16, py - Math.cos(tm) * cr + Math.sin(tm) * 16); g.stroke();
+      g.save(); g.translate(px + Math.sin(th) * rr, py - Math.cos(th) * rr); g.rotate(th);
+      const s = 1 + (newest ? 0.14 + 0.1 * Math.sin(t * 6) : 0);
+      g.scale(s, s);
+      g.fillStyle = on ? col : "#0f1a36"; g.globalAlpha = on ? (newest ? 0.75 + 0.25 * Math.sin(t * 6) : 0.85) : 1;
+      g.beginPath(); (g.roundRect ? g.roundRect(-bs / 2, -bs / 2, bs, bs, 6) : g.rect(-bs / 2, -bs / 2, bs, bs)); g.fill();
+      g.globalAlpha = 1; g.strokeStyle = col; g.lineWidth = 3; g.globalAlpha = on ? 1 : 0.4; g.stroke(); g.globalAlpha = 1;
+      g.restore();
+    }
+    // the face: current phase and block count
+    const ph = phaseOf(Math.max(0, Math.min(tot - 1, nOn - 1)));
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillStyle = "rgba(234,230,218,.6)"; g.font = `500 13px ${FONT}`; g.fillText(D.title.toUpperCase(), px, py - 36);
+    g.fillStyle = done ? "#f6c98a" : ph.color; g.font = `700 ${done ? 22 : 30}px 'Unbounded', ${FONT}`;
+    g.fillText(done ? "DELIVERED" : ph.name.toUpperCase(), px, py - 2);
+    g.fillStyle = "rgba(234,230,218,.9)"; g.font = `600 20px ${FONT}`;
+    g.fillText(`${String(nOn).padStart(2, "0")} / ${String(tot).padStart(2, "0")}`, px, py + 32);
+    g.textAlign = "left"; g.textBaseline = "alphabetic";
 
     // browser chrome
     g.direction = rtl ? "rtl" : "ltr";

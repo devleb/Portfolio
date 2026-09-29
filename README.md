@@ -54,6 +54,8 @@ Each page is a moment in time, defined by `ERA` at the top of `js/browser.js`:
 | Projects | 2017 | Blog | ∞ |
 | Resume | 2023 | | |
 
+The Home tab's centrepiece is the **delivery chain**: a ring of blocks mined one after another (spec, build, test, ship), on the laptop screen at the desk and again inside the browser. Edit the phases, block counts and colours in `delivery` in `js/content.js`. The Experience clock shows the year of the role being read as you scroll.
+
 Switching tabs runs a year counter from one era to the other. The tunnel twists one way going back and the other way going forward, and the clock hands follow. Change the years in `ERA` to whatever suits you.
 
 ## Structure

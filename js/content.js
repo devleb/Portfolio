@@ -125,6 +125,7 @@ window.CONTENT = {
   projects: [
     {
       title: "Egety blockchain",
+      key: "egety-blockchain",
       exp: "pm",
       start: "2024", end: "Present",
       tech: ["Go", "SQLite", "Locust", "NowNodes API"],
@@ -135,6 +136,7 @@ window.CONTENT = {
     },
     {
       title: "Market data tracker",
+      key: "market-data-tracker",
       exp: "senior",
       start: "", end: "",
       tech: ["Python", "SQLite", "yfinance"],
@@ -145,6 +147,7 @@ window.CONTENT = {
     },
     {
       title: "Google Alerts to Excel",
+      key: "google-alerts-to-excel",
       exp: "senior",
       start: "", end: "",
       tech: ["Go", "Gmail API", "OAuth2", "goquery", "excelize"],
@@ -155,6 +158,7 @@ window.CONTENT = {
     },
     {
       title: "Content management platform",
+      key: "content-management-platform",
       exp: "solo",
       start: "", end: "",
       tech: ["Python", "FastAPI", "HTMX", "Tailwind", "Jinja2", "SQLAlchemy", "PostgreSQL"],
@@ -165,6 +169,7 @@ window.CONTENT = {
     },
     {
       title: "Task management & organizer",
+      key: "task-management-organizer",
       exp: "da",
       start: "Feb 2021", end: "Jun 2021",
       tech: ["Python", "Plotly", "pandas", "SQL Server", "HTML/CSS", "JavaScript", "Streamlit"],
@@ -175,6 +180,7 @@ window.CONTENT = {
     },
     {
       title: "Portfolio (Streamlit)",
+      key: "portfolio-streamlit",
       exp: "solo",
       start: "Sep 2022", end: "Sep 2022",
       tech: ["Python", "Streamlit", "HTML/CSS", "Bootstrap"],
@@ -185,6 +191,7 @@ window.CONTENT = {
     },
     {
       title: "Job detection",
+      key: "job-detection",
       exp: "py",
       start: "Feb 2018", end: "May 2018",
       tech: ["Python", "RegExp", "BeautifulSoup", "pandas"],
@@ -195,6 +202,7 @@ window.CONTENT = {
     },
     {
       title: "DCP",
+      key: "dcp",
       exp: "py",
       start: "May 2017", end: "Jul 2017",
       tech: ["Python", "RegExp"],
@@ -205,6 +213,7 @@ window.CONTENT = {
     },
     {
       title: "LSE",
+      key: "lse",
       exp: "py",
       start: "Jan 2017", end: "Mar 2017",
       tech: ["Python", "RegExp", "PyQt5"],

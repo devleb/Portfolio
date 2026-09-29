@@ -97,7 +97,7 @@
       g.textAlign = "center"; g.textBaseline = "middle";
       [0, 3, 6, 9].forEach(i => { const a = (i / 12) * TAU - Math.PI / 2; g.fillText(ROMAN[i], c + Math.cos(a) * (c - 160), c + Math.sin(a) * (c - 160)); });
       g.fillStyle = rgba(cfg.tint, 1);
-      g.font = `700 ${label.length > 4 ? 120 : 150}px 'Unbounded', 'Instrument Sans', system-ui, sans-serif`;
+      g.font = `700 ${label.length > 4 ? 120 : 150}px 'Unbounded', 'Cairo', 'Instrument Sans', system-ui, sans-serif`;
       g.fillText(label, c, c + 220);
     });
   }
@@ -251,12 +251,21 @@
     if (this.current && !this.warp) { this.current.position.copy(this._restPos()); this.current.scale.setScalar(this._restScale()); }
   };
 
+  // the language changed: redraw the era clocks with the new labels
+  TimeScene.prototype.relabel = function (labels) {
+    this.labels = labels || {};
+    if (this.current && this.current.parent) this.scene.remove(this.current);
+    this.cache = {};
+    if (this.currentKey && !this.warp) this.show(this.currentKey);
+  };
+
   TimeScene.prototype.setPointer = function (x, y) { this.pointer.set(x, y); };
   TimeScene.prototype.setScroll = function (p) { this.scroll = p; };
 
   TimeScene.prototype.show = function (key) {
     if (this.current) this.scene.remove(this.current);
     this.current = this._marker(key);
+    this.currentKey = key;
     this.current.position.copy(this._restPos());
     this.current.scale.setScalar(this._restScale());
     this.scene.add(this.current);
@@ -283,7 +292,7 @@
     }
     this.dir = dir || 1;
     this.warp = { t: 0, dur: 1.6, old, next, oldStart: old.position.clone(), rest, midRes, doneRes, midFired: false };
-    this.current = next;
+    this.current = next; this.currentKey = key;
     return { mid, done };
   };
 

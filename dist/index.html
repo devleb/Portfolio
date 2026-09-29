@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪐</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ==========================================================================
    Georges Matta — 3D portfolio
@@ -92,6 +92,22 @@ button, input, textarea { font: inherit; color: inherit; }
 .intro .actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .intro .hint { margin: 14px 0 0; font-size: 14px; color: var(--dust); }
 .leaving-desk .intro-card { pointer-events: none; }
+
+/* ---------- desk controls: scene (time + weather) and hourglass ---------- */
+.scene-ctl { position: fixed; z-index: 12; top: calc(env(safe-area-inset-top, 0px) + 14px); right: 14px; display: flex; gap: 8px; align-items: flex-start; justify-content: flex-end; opacity: 0; pointer-events: none; transform: translateY(-8px); transition: opacity .6s ease .9s, transform .6s ease .9s; }
+.intro-ready .scene-ctl { opacity: 1; pointer-events: auto; transform: none; }
+.leaving-desk .scene-ctl { opacity: 0; pointer-events: none; transition-delay: 0s; transition-duration: .25s; }
+.no-webgl .scene-ctl { display: none; }
+.scene-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line-strong); background: rgba(10,14,34,.62); color: var(--star); font-weight: 500; font-size: 15px; cursor: pointer; backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2); }
+.scene-btn:hover { border-color: rgba(234,230,218,.4); background: rgba(10,14,34,.78); }
+.scene-btn[aria-expanded="true"] { border-color: var(--amber); }
+.scene-btn .ico { width: 18px; height: 18px; color: var(--amber); }
+.scene-pop { position: absolute; top: calc(100% + 10px); right: 0; width: min(330px, calc(100vw - 28px)); padding: 16px; border-radius: 18px; background: var(--glass-strong); border: 1px solid var(--line-strong); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 24px 60px -20px rgba(0,0,0,.7); }
+.scene-pop[hidden] { display: none; }
+.sp-h { margin: 0 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--dust); }
+.sp-h:not(:first-child) { margin-top: 14px; }
+.sp-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.sp-note { margin: 14px 0 0; font-size: 14px; line-height: 1.45; color: var(--dust); }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -269,16 +285,16 @@ button, input, textarea { font: inherit; color: inherit; }
 .cover {
   height: 132px; position: relative; overflow: hidden;
   background:
-    radial-gradient(circle 130px at 82% 128%, transparent 0 94%, hsl(var(--h) 70% 60%) 94% 100%, transparent 101%),
-    radial-gradient(circle 130px at 82% 128%, hsl(var(--h) 45% 14%) 0 94%, transparent 94.5%),
-    radial-gradient(circle 230px at 82% 128%, hsl(var(--h) 80% 60% / .3), transparent),
+    radial-gradient(circle 130px at var(--cx, 82%) 128%, transparent 0 94%, hsl(var(--h) 70% 60%) 94% 100%, transparent 101%),
+    radial-gradient(circle 130px at var(--cx, 82%) 128%, hsl(var(--h) 45% 14%) 0 94%, transparent 94.5%),
+    radial-gradient(circle 230px at var(--cx, 82%) 128%, hsl(var(--h) 80% 60% / .3), transparent),
     linear-gradient(160deg, hsl(calc(var(--h) + 200) 40% 16%), #0a0e1a 80%);
 }
 .cover::before {
   content: ""; position: absolute; inset: 0;
-  background: repeating-conic-gradient(from 0deg at 82% 128%, rgba(234,230,218,.55) 0 .7deg, transparent .7deg 6deg);
-  -webkit-mask: radial-gradient(circle 130px at 82% 128%, transparent 0 76%, #000 77% 90%, transparent 91%);
-  mask: radial-gradient(circle 130px at 82% 128%, transparent 0 76%, #000 77% 90%, transparent 91%);
+  background: repeating-conic-gradient(from 0deg at var(--cx, 82%) 128%, rgba(234,230,218,.55) 0 .7deg, transparent .7deg 6deg);
+  -webkit-mask: radial-gradient(circle 130px at var(--cx, 82%) 128%, transparent 0 76%, #000 77% 90%, transparent 91%);
+  mask: radial-gradient(circle 130px at var(--cx, 82%) 128%, transparent 0 76%, #000 77% 90%, transparent 91%);
 }
 .cover span { position: absolute; left: 22px; bottom: 14px; font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: -0.03em; color: rgba(234,230,218,.9); line-height: 1; }
 .proj-body { padding: 20px 22px 22px; display: flex; flex-direction: column; flex: 1; }
@@ -312,6 +328,44 @@ button, input, textarea { font: inherit; color: inherit; }
 .chrono.on.settle { opacity: 0; transition-duration: .5s; }
 .chrono-year { font-family: var(--display); font-weight: 700; font-size: clamp(64px, 17vw, 190px); letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--star); text-shadow: 0 0 60px rgba(242,165,65,.65), 0 0 12px rgba(7,11,26,.9); }
 .chrono-dir { font-size: 17px; color: var(--amber-soft); text-shadow: 0 1px 10px rgba(7,11,26,.9); }
+
+/* ---------- project books ---------- */
+.proj.book { background: none; border: 0; overflow: visible; display: block; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.book-tilt { position: relative; border-radius: var(--r-lg); transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .25s ease; will-change: transform; }
+.book-tilt::after { content: ""; position: absolute; inset: 0; z-index: 3; border-radius: var(--r-lg); pointer-events: none; background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.14), transparent 55%); opacity: var(--glow, 0); transition: opacity .25s; }
+.book-body { position: relative; height: 380px; perspective: 1400px; }
+.pg { position: absolute; inset: 0; border-radius: var(--r-lg); overflow: hidden; }
+.pg-inside { background: var(--glass); border: 1px solid var(--line); padding: 22px 22px 18px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); visibility: hidden; opacity: 0; transition: opacity .4s .25s, visibility 0s .9s; }
+.book.open .pg-inside { visibility: visible; opacity: 1; transition: opacity .4s .25s, visibility 0s 0s; }
+.pg-scroll { height: 100%; overflow-y: auto; padding-inline-end: 4px; }
+.pg-scroll h2 { font-size: 21px !important; margin-bottom: 6px !important; padding-inline-end: 44px; }
+.pg-scroll h3 { font-size: 14px; color: var(--dust); font-weight: 600; margin: 14px 0 4px; }
+.pg-scroll p { font-size: 16px; margin: 0 0 4px; }
+.pg-scroll .points { font-size: 16px; }
+.pg-close { position: absolute; top: 12px; inset-inline-end: 12px; z-index: 2; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line-strong); background: rgba(10,14,34,.6); color: var(--star); cursor: pointer; display: grid; place-items: center; }
+.pg-close:hover { border-color: var(--amber); }
+.pg-close .ico { width: 18px; height: 18px; }
+.pg-cover { display: flex; flex-direction: column; align-items: stretch; width: 100%; padding: 0; font: inherit; color: inherit; text-align: start; cursor: pointer; border: 1px solid var(--line); background: var(--glass); transform-origin: 0 50%; backface-visibility: hidden; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); transition: transform .9s cubic-bezier(.3,.7,.2,1), opacity .5s .35s, visibility 0s 0s; }
+.pg-cover .cover { height: 168px; flex: none; }
+.book.open .pg-cover { transform: rotateY(-115deg); opacity: 0; visibility: hidden; pointer-events: none; transition: transform .9s cubic-bezier(.3,.7,.2,1), opacity .5s .35s, visibility 0s .9s; }
+.cover-info { display: flex; flex-direction: column; gap: 6px; flex: 1; padding: 18px 22px 20px; }
+.cv-title { font-family: var(--display); font-weight: 500; font-size: 21px; line-height: 1.2; color: var(--star); }
+.cv-meta { color: var(--amber-soft); font-size: 15px; }
+.cv-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.cv-tags i { font-style: normal; font-size: 13px; padding: 3px 10px; border-radius: 999px; background: rgba(111,211,224,.1); color: var(--signal); border: 1px solid rgba(111,211,224,.18); }
+.cv-open { margin-top: auto; padding-top: 10px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--amber); }
+.pg-cover:hover .cv-open b { transform: translateX(3px); }
+.cv-open b { transition: transform .2s; }
+@media (max-width: 760px) { .book-body { height: 400px; } }
+@media (prefers-reduced-motion: reduce) { .book-tilt { transform: none; } .pg-cover, .pg-inside { transition: none; } }
+
+/* ---------- desk: detected conditions, prop labels, language button ---------- */
+.env-line { margin: 8px 0 0; font-size: 14px; color: var(--amber-soft); text-shadow: 0 1px 10px rgba(0,0,0,.7); }
+.prop-tip { position: fixed; z-index: 13; transform: translate(14px, 18px); padding: 6px 12px; border-radius: 999px; background: var(--glass-strong); border: 1px solid var(--line-strong); color: var(--star); font-size: 14px; pointer-events: none; white-space: nowrap; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.prop-tip[hidden] { display: none; }
+.lang-btn { font-weight: 600; font-size: 14px; }
+.cv-note { margin: 10px 0 0 !important; font-size: 14px; }
+.sp-note a { color: var(--signal); }
 
 /* ---------- contact ---------- */
 .links { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; margin-bottom: 18px; }
@@ -457,6 +511,36 @@ button, input, textarea { font: inherit; color: inherit; }
   .page.leaving { transform: none; filter: none; }
 }
 
+
+/* ---------- Arabic / right-to-left ---------- */
+:root[lang="ar"] { --display: "Cairo", "Segoe UI", Tahoma, system-ui, sans-serif; --text: "Cairo", "Segoe UI", Tahoma, system-ui, sans-serif; }
+:root[lang="ar"] body { line-height: 1.75; }
+:root[lang="ar"] * { letter-spacing: normal !important; }
+:root[lang="ar"] .display { line-height: 1.25; }
+[dir="rtl"] .scene-ctl { right: auto; left: 14px; }
+[dir="rtl"] .scene-pop { right: auto; left: 0; }
+[dir="rtl"] #loader .dot { margin-right: 0; margin-left: 10px; }
+[dir="rtl"] .page { margin: 0 clamp(16px, 7vw, 120px) 0 0; }
+[dir="rtl"] .points { padding-left: 0; padding-right: 1.2em; }
+[dir="rtl"] .timeline { padding: 0 28px 0 0; }
+[dir="rtl"] .timeline::before { left: auto; right: 6px; }
+[dir="rtl"] .timeline > li::before { left: auto; right: -27px; }
+[dir="rtl"] .cover span { left: auto; right: 22px; }
+[dir="rtl"] .cover { --cx: 18%; }
+[dir="rtl"] .empty, [dir="rtl"] .proj-link, [dir="rtl"] .role-badge, [dir="rtl"] .lg-cat { text-align: right; }
+[dir="rtl"] .link-row .ext { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .lg-items { padding: 0 72px 0 16px; }
+[dir="rtl"] .bar-v { text-align: left; }
+[dir="rtl"] .fill, [dir="rtl"] .progress { transform-origin: right; }
+[dir="rtl"] .legend i { margin-right: 0; margin-left: 7px; }
+[dir="rtl"] #nav-back svg, [dir="rtl"] #nav-fwd svg { transform: scaleX(-1); }
+[dir="rtl"] .pg-cover { transform-origin: 100% 50%; }
+[dir="rtl"] .book.open .pg-cover { transform: rotateY(115deg); }
+[dir="rtl"] .cv-open b { display: inline-block; transform: scaleX(-1); }
+[dir="rtl"] .pg-cover:hover .cv-open b { transform: scaleX(-1) translateX(3px); }
+@media (max-width: 860px) { [dir="rtl"] .lg-items { padding: 0 16px; } }
+@media (max-width: 760px) { [dir="rtl"] .page { margin: 0 16px; } }
+
 </style>
 <!-- VENDOR_START -->
 <script>
@@ -469,19 +553,19 @@ button, input, textarea { font: inherit; color: inherit; }
 <!-- VENDOR_END -->
 </head>
 <body>
-  <canvas id="scene" aria-label="A desk at night with a laptop, a lamp, an hourglass and a window full of stars"></canvas>
+  <canvas id="scene" aria-label="A desk at night with a laptop, a lamp, an hourglass, three books and a window onto the weather outside"></canvas>
 
-  <div id="loader" role="status"><p><span class="dot"></span>Setting up the desk</p></div>
+  <div id="loader" role="status"><p><span class="dot"></span><span data-i18n="Setting up the desk">Setting up the desk</span></p></div>
 
   <section id="intro" class="intro" aria-label="Welcome">
     <div class="intro-card">
       <p class="intro-name">Georges Matta</p>
-      <p class="intro-role">Senior developer &amp; project manager</p>
+      <p class="intro-role" data-role>Senior developer &amp; project manager</p>
       <div class="actions">
-        <button id="enter-btn" class="btn primary" type="button">Step inside</button>
-        <button id="skip-btn" class="link-btn" type="button">Skip the intro</button>
+        <button id="enter-btn" class="btn primary" type="button" data-i18n="Step inside">Step inside</button>
+        <button id="skip-btn" class="link-btn" type="button" data-i18n="Skip the intro">Skip the intro</button>
       </div>
-      <p class="hint">Or tap the laptop screen</p>
+      <p class="hint" data-i18n="Tap the laptop to enter. Try the hourglass, the CV and the coin.">Tap the laptop to enter. Try the hourglass, the CV and the coin.</p>
     </div>
   </section>
 
@@ -618,6 +702,7 @@ window.CONTENT = {
   projects: [
     {
       title: "Egety blockchain",
+      key: "egety-blockchain",
       exp: "pm",
       start: "2024", end: "Present",
       tech: ["Go", "SQLite", "Locust", "NowNodes API"],
@@ -628,6 +713,7 @@ window.CONTENT = {
     },
     {
       title: "Market data tracker",
+      key: "market-data-tracker",
       exp: "senior",
       start: "", end: "",
       tech: ["Python", "SQLite", "yfinance"],
@@ -638,6 +724,7 @@ window.CONTENT = {
     },
     {
       title: "Google Alerts to Excel",
+      key: "google-alerts-to-excel",
       exp: "senior",
       start: "", end: "",
       tech: ["Go", "Gmail API", "OAuth2", "goquery", "excelize"],
@@ -648,6 +735,7 @@ window.CONTENT = {
     },
     {
       title: "Content management platform",
+      key: "content-management-platform",
       exp: "solo",
       start: "", end: "",
       tech: ["Python", "FastAPI", "HTMX", "Tailwind", "Jinja2", "SQLAlchemy", "PostgreSQL"],
@@ -658,6 +746,7 @@ window.CONTENT = {
     },
     {
       title: "Task management & organizer",
+      key: "task-management-organizer",
       exp: "da",
       start: "Feb 2021", end: "Jun 2021",
       tech: ["Python", "Plotly", "pandas", "SQL Server", "HTML/CSS", "JavaScript", "Streamlit"],
@@ -668,6 +757,7 @@ window.CONTENT = {
     },
     {
       title: "Portfolio (Streamlit)",
+      key: "portfolio-streamlit",
       exp: "solo",
       start: "Sep 2022", end: "Sep 2022",
       tech: ["Python", "Streamlit", "HTML/CSS", "Bootstrap"],
@@ -678,6 +768,7 @@ window.CONTENT = {
     },
     {
       title: "Job detection",
+      key: "job-detection",
       exp: "py",
       start: "Feb 2018", end: "May 2018",
       tech: ["Python", "RegExp", "BeautifulSoup", "pandas"],
@@ -688,6 +779,7 @@ window.CONTENT = {
     },
     {
       title: "DCP",
+      key: "dcp",
       exp: "py",
       start: "May 2017", end: "Jul 2017",
       tech: ["Python", "RegExp"],
@@ -698,6 +790,7 @@ window.CONTENT = {
     },
     {
       title: "LSE",
+      key: "lse",
       exp: "py",
       start: "Jan 2017", end: "Mar 2017",
       tech: ["Python", "RegExp", "PyQt5"],
@@ -776,6 +869,313 @@ window.CONTENT = {
 </script>
   <script>
 /* ==========================================================================
+   Arabic content. Only the text that changes is listed; everything else
+   (links, technology names, levels, ids, colours) comes from content.js.
+   Lists are matched by position: keep the same order as content.js.
+   Use null to keep the English value for an item.
+   ========================================================================== */
+window.CONTENT_AR = {
+  profile: {
+    role: "مطوّر أول ومدير مشاريع",
+    location: "لبنان",
+    intro:
+      "أبني أنظمة خلفية بلغتي Go وPython، وبنى تحتية لتقنية بلوكتشين، وأدوات استخباراتية تحوّل البيانات المتفرقة إلى قرارات واضحة. أحمل بكالوريوس في علوم الحاسوب، وأدير حاليًا الفريق العامل على بلوكتشين Egety.",
+    focus: [
+      { title: "الأنظمة الخلفية", text: "واجهات برمجية وخدمات بلغتي Go وPython (FastAPI)، مدعومة بقواعد بيانات PostgreSQL وSQLite وSQL Server." },
+      { title: "بلوكتشين", text: "سلسلة كتل مخصصة بلغة Go، وأنظمة خلفية لمجمّع السيولة والتعدين، والتكامل مع واجهات العقد، واختبارات الأحمال." },
+      { title: "الاستخبارات والبيانات", text: "جمع المعلومات من المصادر المفتوحة (OSINT)، واستخراج البيانات وأتمتتها، ولوحات المعلومات، وإعداد مواد إحاطة ثنائية اللغة بالعربية والإنجليزية." }
+    ],
+    exploring: "التوليد المعزَّز بالاسترجاع (RAG) للنصوص العربية والإنجليزية دون اتصال بالإنترنت، باستخدام نماذج لغوية محلية (Ollama وLM Studio وAnythingLLM)."
+  },
+
+  education: {
+    degree: {
+      school: "الجامعة العربية المفتوحة",
+      title: "بكالوريوس في علوم الحاسوب (تكنولوجيا المعلومات والحوسبة)",
+      points: [
+        "المعدل التراكمي 2.9 — معدل الجائزة 3.5",
+        "مشروع التخرج: شبكة اجتماعية على غرار فيسبوك مع تكامل خرائط Google"
+      ]
+    },
+    certificates: [
+      { date: "نيسان 2023" },
+      { date: "آذار 2023" },
+      { date: "آذار 2022 – أيار 2022" },
+      { title: "R وPython لتحليل البيانات", date: "كانون الثاني 2021 – نيسان 2021" },
+      { title: "برمجة Python والأتمتة", date: "كانون الثاني 2019 – أيار 2019" },
+      { title: "بناء المواقع باستخدام Django", date: "تشرين الأول 2018 – كانون الأول 2018" }
+    ]
+  },
+
+  experience: [
+    {
+      role: "مدير مشروع — بلوكتشين Egety",
+      years: "2024 – الحاضر",
+      text: "أقود الفريق الذي يبني Egety، وهي سلسلة كتل مخصصة مكتوبة بلغة Go، من المواصفات الفنية حتى التسليم.",
+      points: [
+        "أتولى خطة المشروع وتقسيم المهام والتسليم عبر الفريق.",
+        "أراجع المواصفات الفنية وأجري تحليل الفجوات، وأحوّل الأسئلة المفتوحة إلى استيضاحات واضحة للعميل.",
+        "أشرف على أعمال الواجهة الخلفية بلغة Go: مجمّع السيولة وخدمات التعدين والتكامل مع واجهات العقد.",
+        "أنسّق اختبارات الأحمال باستخدام Locust."
+      ]
+    },
+    {
+      role: "مطوّر أول",
+      years: "2023 – 2024",
+      text: "تطوير الأنظمة الخلفية وتطبيقات الويب بلغتي Go وPython.",
+      points: [
+        "بناء خدمات خلفية بلغتي Go وPython (FastAPI).",
+        "تسليم تطبيقات ويب تُعرض من الخادم باستخدام HTMX وTailwind وSQLAlchemy، على قواعد بيانات SQLite وPostgreSQL."
+      ]
+    },
+    {
+      role: "مطوّر Python (تحليل البيانات)",
+      years: "2019 – 2023",
+      text: "انتقلت من Excel وPower BI إلى Python وStreamlit، وكان ذلك نقطة التحوّل في مسيرتي في مجالي البيانات وتطوير الويب.",
+      points: [
+        "جمع البيانات من مصادر متعددة، بما فيها الملفات وقواعد البيانات.",
+        "تنظيف البيانات وتشكيلها بما يلبي متطلبات المشروع.",
+        "تحليل البيانات وسرد القصة من خلال لوحات معلومات تفاعلية."
+      ]
+    },
+    {
+      role: "مطوّر Python",
+      years: "2016 – 2018",
+      text: "بناء تطبيقات ويب باستخدام Django وتطبيقات سطح المكتب باستخدام PyQt5.",
+      points: [
+        "قيادة الفريق بتقسيم العمل بين الواجهة الخلفية والأمامية واختبارات الوحدة وضمان الجودة والنشر.",
+        "تحويل متطلبات العميل إلى ميزات ووظائف.",
+        "مراجعة المشروع في كل مرحلة، وتنفيذ اختبارات الوحدة وضمان الجودة.",
+        "الإشراف على النشر على الخوادم والأجهزة المستقلة."
+      ]
+    },
+    {
+      role: "دعم تقني",
+      years: "2012 – 2014",
+      text: "أول وظيفة لي في تكنولوجيا المعلومات، تعلّمت فيها الحواسيب والشبكات والخوادم عمليًا.",
+      points: [
+        "تهيئة الأجهزة وتثبيت أنظمة التشغيل (Windows وLinux) والبرامج.",
+        "صيانة الشبكات واستكشاف أعطالها.",
+        "صيانة عتاد الخوادم وبرمجياتها."
+      ]
+    }
+  ],
+
+  projects: [
+    { title: "بلوكتشين Egety", role: "مدير المشروع", end: "الحاضر",
+      desc: "سلسلة كتل مخصصة مكتوبة بلغة Go بعرض ثابت قدره 10 ملايين عملة، مع نظام خلفي لمجمّع السيولة ونظام خلفي لتعدين LTC.",
+      tasks: ["مراجعة المواصفات الفنية وتحليل الفجوات", "خدمات مجمّع السيولة والتعدين", "التكامل مع واجهات العقد", "اختبار الأحمال باستخدام Locust"] },
+    { title: "متتبّع بيانات الأسواق", role: "مطوّر",
+      desc: "يتتبّع أسعار السلع وأسعار صرف العملات، ويخزّن السجل التاريخي في SQLite، ويحسب مؤشر قيمة مخصصًا. مبني كوحدات صغيرة لجلب البيانات وتخزينها وتحليلها وعرضها.",
+      tasks: ["جلب البيانات من واجهات الأسواق وأسعار الصرف", "التخزين في SQLite", "التحليل وإعداد التقارير"] },
+    { title: "من تنبيهات Google إلى Excel", role: "مطوّر",
+      desc: "أداة بلغة Go تجمع تنبيهات Google عبر واجهة Gmail البرمجية واستخراج بيانات الويب، ثم تصدّرها إلى جداول Excel منظمة.",
+      tasks: ["تكامل OAuth2 مع Gmail", "تحليل HTML باستخدام goquery", "التصدير إلى Excel باستخدام excelize"] },
+    { title: "منصة إدارة المحتوى", role: "مطوّر متكامل (Full-stack)",
+      desc: "تطبيقات ويب ونظام إدارة محتوى تُعرض من الخادم، مبنية بـ FastAPI وHTMX وTailwind، وتنتقل من SQLite إلى PostgreSQL مع نموّها.",
+      tasks: ["الواجهة الخلفية ونموذج البيانات", "الواجهة الأمامية بـ HTMX", "النشر"] },
+    { title: "إدارة المهام والتنظيم", role: "قائد تقني", start: "شباط 2021", end: "حزيران 2021",
+      desc: "نظام مهام لكل قسم. لكل مستخدم ملف شخصي يضم المهام اليومية والمنجزة والمعلّقة، ويمكنه إشعار المشرف عند الإنجاز. ويستطيع المشرفون تتبّع كل مهمة ومراجعتها.",
+      tasks: ["إدارة المشروع", "الواجهة الخلفية والأمامية", "ضمان الجودة وتصحيح الأخطاء"] },
+    { title: "الملف الشخصي (Streamlit)", role: "مطوّر متكامل (Full-stack)", start: "أيلول 2022", end: "أيلول 2022",
+      desc: "النسخة الأولى من هذا الملف الشخصي، مبنية بـ Streamlit للتعريف بنفسي وبالخبرة التي جمعتها عبر مسيرتي.",
+      tasks: ["الواجهة الخلفية والأمامية", "ضمان الجودة وتصحيح الأخطاء"] },
+    { title: "رصد الوظائف", role: "مطوّر Python", start: "شباط 2018", end: "أيار 2018",
+      desc: "نظام تنبيهات يومي للوظائف: يجمع إعلانات الوظائف المطابقة لمسمى محدد، ويحفظ الروابط والتفاصيل في إطار بيانات، ويرسلها بالبريد كملف Excel.",
+      tasks: ["بنية الواجهة الخلفية", "بحث نصي متقدم", "تصحيح الأخطاء"] },
+    { title: null, role: "مطوّر Python", start: "أيار 2017", end: "تموز 2017",
+      desc: "يؤتمت مهمة نسخ يومية: عند توصيل ذاكرة USB تكتشفها الأداة وتنسخ أنواع الملفات المحددة مسبقًا إلى وجهة مختارة.",
+      tasks: ["الواجهة الخلفية", "تصحيح الأخطاء"] },
+    { title: null, role: "مطوّر مبتدئ", start: "كانون الثاني 2017", end: "آذار 2017",
+      desc: "محرك بحث محلي عن الكلمات داخل ملفات PDF وTXT وWord. يختار المستخدم الكلمات ونوع الملف والمجلد، ثم يقرأ الملفات المطابقة مع تظليل المطابقات.",
+      tasks: ["بنية الواجهتين الخلفية والأمامية", "بحث نصي كامل", "تصحيح الأخطاء"] }
+  ],
+
+  independent: { title: "مشاريع مستقلة", text: "بُنيت في وقتي الخاص، خارج أدواري الوظيفية." },
+
+  skills: [
+    { cat: "اللغات البرمجية" },
+    { cat: "الواجهة الخلفية", items: [null, null, null, ["REST والمصادقة بـ JWT"]] },
+    { cat: "الواجهة الأمامية" },
+    { cat: "قواعد البيانات" },
+    { cat: "بلوكتشين", items: [["تطوير بلوكتشين بلغة Go"], ["أنظمة خلفية لمجمّعات السيولة"], ["التكامل مع واجهات العقد (Node API)"]] },
+    { cat: "البيانات والتحليل الاستخباراتي", items: [null, ["التمثيل البصري (Plotly وPower BI)"], ["استخراج بيانات الويب والأتمتة"], ["أدوات الاستخبارات مفتوحة المصدر (OSINT)"]] },
+    { cat: "الأدوات", items: [null, null, null, ["اختبار الأحمال باستخدام Locust"]] }
+  ],
+
+  languages: [["العربية", "لغة أم"], ["الإنجليزية", "قراءة ومحادثة ممتازتان، وكتابة جيدة"], ["الفرنسية", "مستوى متوسط"]],
+
+  leadership: [
+    { cat: "تطوير التطبيقات", items: [{ tags: ["الأنظمة الخلفية"] }] },
+    { cat: "قواعد البيانات والتزامن", items: [{ tags: ["عزل المعاملات", "الجمود المتبادل (Deadlocks)", "الأقفال الاستشارية", "تجمّعات الاتصال", "تنافس الاستعلامات"] }] },
+    { cat: "المعالجة غير المتزامنة", items: [{ tags: ["بثّ الأحداث"], status: "قيد التعلّم حاليًا" }, { tags: ["مهام مجدولة"] }] },
+    { cat: "النشر والبنية التحتية", items: [{ tags: ["النشر ضمن حاويات"] }] },
+    { cat: "المراقبة واستكشاف الأخطاء", items: [{ name: "استكشاف الأخطاء وإصلاحها" }] },
+    { cat: "الموثوقية والعمليات", items: [null, { tags: ["التوافر العالي"] }, { name: "التعافي من الكوارث" }, { name: "اختبار الأحمال" }, { name: "مراجعات ما بعد الحوادث" }] }
+  ],
+
+  links: [{ label: "راسلني" }],
+
+  blogs: [
+    {
+      title: "رحلتي في تعلّم تحليل البيانات (تعلّم ذاتي)",
+      excerpt:
+        "أولى قصصي على Medium. بعد سنوات من التعلّم من محللي البيانات والمبرمجين هناك، قررت أن أشارك ما تعلمته في ثلاث سنوات من العمل في هذا المجال: الصعوبات التي تعترضك أثناء التحليل في طريقك إلى النتيجة التي تريدها. آمل أن تفيد كل من يبدأ في تحليل البيانات، ثم في تعلّم الآلة لاحقًا."
+    }
+  ]
+};
+
+</script>
+  <script>
+/* ==========================================================================
+   Language: English or Arabic (right-to-left).
+   - t("English text") returns the Arabic text when Arabic is on, otherwise the same text.
+   - content() returns the portfolio content in the current language.
+   - Elements with data-i18n / data-i18n-label are updated automatically.
+   ========================================================================== */
+(function () {
+  const LS = "devleb.lang.v1";
+
+  const AR = {
+    // pages and tabs
+    "Home": "الرئيسية", "Education": "التعليم", "Experience": "الخبرة", "Projects": "المشاريع",
+    "Contact": "التواصل", "Resume": "السيرة الذاتية", "Blog": "المدوّنة", "Not found": "غير موجود",
+    // browser chrome
+    "Close the browser and return to the desk": "إغلاق المتصفح والعودة إلى المكتب",
+    "Portfolio pages": "صفحات الملف الشخصي", "Back": "رجوع", "Forward": "تقدّم", "Reload page": "إعادة تحميل الصفحة",
+    "Address": "العنوان", "Desk": "المكتب", "Back to the desk": "العودة إلى المكتب", "Switch language": "تبديل اللغة",
+    "Travelling back": "سفر إلى الماضي", "Travelling ahead": "سفر إلى المستقبل", "NOW": "الآن", "NEXT": "التالي",
+    // home
+    "Portrait of {name}": "صورة {name}", "See my projects": "شاهد مشاريعي", "Download CV": "تنزيل السيرة الذاتية",
+    "Get in touch": "تواصل معي", "In IT since": "في مجال تكنولوجيا المعلومات منذ", "{n} years": "{n} سنة",
+    "Based in": "مقيم في", "Degree": "الشهادة", "BSc Computer Science": "بكالوريوس علوم الحاسوب",
+    "What I work on": "مجالات عملي", "Currently exploring": "أستكشف حاليًا",
+    // education
+    "A computer science degree, then a steady run of certifications.": "شهادة جامعية في علوم الحاسوب، تلتها سلسلة متواصلة من الشهادات المهنية.",
+    "Education sections": "أقسام التعليم", "Certificates": "الشهادات", "Copy credential ID {id}": "نسخ رقم الاعتماد {id}",
+    // experience
+    "From IT support to managing a blockchain team, with the projects behind each role.": "من الدعم التقني إلى إدارة فريق بلوكتشين، مع المشاريع التي تقف وراء كل دور.",
+    "Projects in this role": "مشاريع هذا الدور", "Open project {name}": "فتح المشروع {name}",
+    // projects
+    "Filter by technology or search by name. Tap a project to open it.": "صفِّ المشاريع حسب التقنية أو ابحث بالاسم. المس مشروعًا لفتحه.",
+    "Find a project": "ابحث عن مشروع", "Filter by technology": "التصفية حسب التقنية", "Show all {n} technologies": "عرض كل التقنيات ({n})",
+    "Show fewer": "عرض أقل", "Clear filters": "مسح عوامل التصفية", "No projects match these filters.": "لا توجد مشاريع تطابق عوامل التصفية هذه.",
+    "Description": "الوصف", "Tasks": "المهام", "Filter by {name}": "التصفية حسب {name}", "Open": "افتح", "Close": "إغلاق",
+    "See this role on the Experience page: {name}": "عرض هذا الدور في صفحة الخبرة: {name}",
+    // contact
+    "Open to projects, collaboration and a good technical conversation.": "منفتح على المشاريع والتعاون ونقاش تقني جيد.",
+    "Write a message": "اكتب رسالة", "This opens your email app with the message ready to send to {email}.": "سيفتح هذا تطبيق البريد لديك والرسالة جاهزة للإرسال إلى {email}.",
+    "Your name": "اسمك", "Subject": "الموضوع", "Message": "الرسالة", "Open in email app": "فتح في تطبيق البريد", "Copy email address": "نسخ البريد الإلكتروني",
+    "your name": "اسمك", "a subject": "موضوعًا", "a message": "رسالة", "Add {list} first.": "أضف {list} أولًا.", "Opening your email app": "جارٍ فتح تطبيق البريد",
+    // resume
+    "View CV": "عرض السيرة الذاتية", "Hide CV": "إخفاء السيرة الذاتية", "About me": "نبذة عني",
+    "Keeps up with new technology, especially in development and programming.": "يواكب التقنيات الحديثة، ولا سيما في التطوير والبرمجة.",
+    "Interested in data analytics, AI and NLP.": "مهتم بتحليل البيانات والذكاء الاصطناعي ومعالجة اللغات الطبيعية.",
+    "Web scraping and automation.": "استخراج بيانات الويب والأتمتة.",
+    "Work experience": "الخبرة المهنية", "Info": "معلومات", "Email": "البريد الإلكتروني", "Location": "الموقع", "Languages": "اللغات",
+    "Technical leadership": "القيادة التقنية", "Technical qualifications I bring to project management. Pick a category.": "المؤهلات التقنية التي أضيفها إلى إدارة المشاريع. اختر فئة.",
+    "{n} qualifications": "{n} مؤهلات", "of {n}": "من {n}", "Skills": "المهارات", "All": "الكل", "Filter skills by category": "تصفية المهارات حسب الفئة",
+    "Level legend": "مفتاح المستويات", "85% and above": "85% فأكثر", "75–84%": "75–84%", "65–74%": "65–74%", "below 65%": "أقل من 65%",
+    "Skill:": "المهارة:", "Experience:": "الخبرة:", "The CV is currently available in English.": "السيرة الذاتية متوفرة حاليًا بالإنجليزية.",
+    "Loading the CV…": "جارٍ تحميل السيرة الذاتية…", "The CV preview couldn't load ({msg}). Use Download CV instead.": "تعذّر تحميل معاينة السيرة الذاتية ({msg}). استخدم زر التنزيل بدلًا من ذلك.",
+    "CV page {i}": "الصفحة {i} من السيرة الذاتية", "CV saved": "تم حفظ السيرة الذاتية",
+    "The download didn't start here. Try the link on the published site.": "لم يبدأ التنزيل هنا. جرّب الرابط في الموقع المنشور.",
+    // blog and 404
+    "Notes from learning in public.": "ملاحظات من رحلة التعلّم العلني.", "Read on Medium": "اقرأ على Medium",
+    "Lost in time": "تُهت في الزمن", "{path} isn't a page on this site. Pick a destination:": "{path} ليست صفحة في هذا الموقع. اختر وجهتك:",
+    // toasts
+    "Copied {x}": "تم نسخ {x}", "Copy blocked here. The address is {x}": "النسخ غير متاح هنا. العنوان هو {x}",
+    // desk overlay
+    "Step inside": "ادخل", "Skip the intro": "تخطَّ المقدمة", "Setting up the desk": "جارٍ تجهيز المكتب",
+    "Tap the laptop to enter. Try the hourglass, the CV and the coin.": "المس الحاسوب للدخول. جرّب الساعة الرملية والسيرة الذاتية والعملة.",
+    "Flip the hourglass": "اقلب الساعة الرملية", "Open my CV": "افتح سيرتي الذاتية", "See the Egety project": "شاهد مشروع Egety",
+    "Backend / Blockchain / Intelligence & data": "الأنظمة الخلفية / بلوكتشين / الاستخبارات والبيانات",
+    // scene panel
+    "Time of day": "وقت اليوم", "Weather": "الطقس", "Motion": "الحركة", "Auto": "تلقائي", "Dawn": "الفجر", "Day": "النهار", "Dusk": "الغروب", "Night": "الليل",
+    "Live": "مباشر", "My location": "موقعي", "Sunny": "مشمس", "Cloudy": "غائم", "Rainy": "ماطر", "Foggy": "ضبابي", "Snowy": "ثلجي", "Clear": "صافٍ",
+    "Tilt": "الإمالة", "Time of day and weather": "وقت اليوم والطقس", "Scene: {phase}, {weather}. Change time and weather.": "المشهد: {phase}، {weather}. غيّر الوقت والطقس.",
+    "sunny": "مشمس", "clear": "صافٍ", "cloudy": "غائم", "raining": "تمطر", "foggy": "ضبابي", "snowing": "تثلج",
+    "It's {time} in {city}: {temp}°C, {cond}.": "الساعة {time} في {city}: {temp}°م، الطقس {cond}.",
+    "It's {time} where you are: {temp}°C, {cond}.": "الساعة {time} عندك: {temp}°م، الطقس {cond}.",
+    "It's {time} for you. Live weather isn't available here, so the sky is clear.": "الساعة {time} عندك. الطقس المباشر غير متاح هنا، لذا السماء صافية.",
+    "It's {time}. Weather set to {w}.": "الساعة {time}. تم ضبط الطقس على {w}.",
+    "Checking the weather…": "جارٍ التحقق من الطقس…",
+    "Time follows your clock.": "الوقت يتبع ساعتك.", "Time set by you.": "الوقت من اختيارك.",
+    "Weather set by you. Pick Live to follow the real weather.": "الطقس من اختيارك. اختر «مباشر» لمتابعة الطقس الفعلي.",
+    "Live weather for {city}: {temp}°C.": "الطقس المباشر في {city}: {temp}°م.",
+    "Based on your time zone's main city, not your exact location.": "بحسب المدينة الرئيسية في منطقتك الزمنية، وليس موقعك الدقيق.",
+    "Based on your device's location. It is not stored.": "بحسب موقع جهازك. لا يتم حفظه.",
+    "Weather data by Open-Meteo.com": "بيانات الطقس من Open-Meteo.com",
+    "Couldn't reach the weather service (some preview windows and blockers stop it). The sky is clear for now.": "تعذّر الوصول إلى خدمة الطقس (بعض نوافذ المعاينة وبرامج الحجب تمنعها). السماء صافية حاليًا.",
+    "Your time zone ({tz}) doesn't name a city. Try My location, or pick a weather.": "منطقتك الزمنية ({tz}) لا تحدد مدينة. جرّب «موقعي»، أو اختر طقسًا.",
+    "Location permission was declined, so your time zone's city is used.": "تم رفض إذن الموقع، لذا تُستخدم مدينة منطقتك الزمنية.",
+    "your location": "موقعك"
+  };
+
+  let lang = "en";
+  const listeners = [];
+  const cache = { ar: null };
+
+  // merges Arabic text over the English content, by position in lists; null keeps the English value
+  function merge(en, ar) {
+    if (ar === undefined || ar === null) return en;
+    if (Array.isArray(en)) return en.map((v, i) => merge(v, Array.isArray(ar) ? ar[i] : undefined));
+    if (en && typeof en === "object") { const o = {}; for (const k in en) o[k] = merge(en[k], typeof ar === "object" ? ar[k] : undefined); return o; }
+    return ar;
+  }
+
+  function content() {
+    if (lang !== "ar") return window.CONTENT;
+    return cache.ar || (cache.ar = merge(window.CONTENT, window.CONTENT_AR || {}));
+  }
+
+  function t(s, vars) {
+    let out = lang === "ar" && AR[s] !== undefined ? AR[s] : s;
+    if (vars) out = out.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? vars[k] : ""));
+    return out;
+  }
+
+  const langLabel = () => (lang === "ar" ? "English" : "عربي");
+
+  function applyStatic() {
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-label]").forEach(el => { el.setAttribute("aria-label", t(el.dataset.i18nLabel)); });
+    document.querySelectorAll("[data-lang-label]").forEach(el => { el.textContent = langLabel(); });
+    document.querySelectorAll("[data-role]").forEach(el => { el.textContent = content().profile.role; });
+  }
+
+  function apply(l) {
+    lang = l === "ar" ? "ar" : "en";
+    const root = document.documentElement;
+    root.lang = lang; root.dir = lang === "ar" ? "rtl" : "ltr";
+    applyStatic();
+  }
+
+  function set(l) {
+    if ((l === "ar" ? "ar" : "en") === lang) return;
+    apply(l);
+    try { localStorage.setItem(LS, lang); } catch (e) {}
+    listeners.forEach(fn => fn(lang));
+  }
+
+  function init() {
+    let saved = null;
+    try { saved = localStorage.getItem(LS); } catch (e) {}
+    apply(saved === "ar" ? "ar" : "en");
+  }
+
+  window.I18N = {
+    t, content, set, init, langLabel, applyStatic,
+    get lang() { return lang; },
+    get rtl() { return lang === "ar"; },
+    onChange(fn) { listeners.push(fn); }
+  };
+  init();
+})();
+
+</script>
+  <script>
+/* ==========================================================================
    Desk scene — a warm desk at night: laptop, lamp, mug, plant, books,
    a little planet model and a window full of stars.
    The laptop screen is a live canvas texture. Entering flies the camera
@@ -848,7 +1248,7 @@ window.CONTENT = {
 
   function wallTexture() {
     return canvasTex(512, 512, (g, w, h) => {
-      g.fillStyle = "#3a3440"; g.fillRect(0, 0, w, h);
+      g.fillStyle = "#443e4c"; g.fillRect(0, 0, w, h);
       const img = g.getImageData(0, 0, w, h);
       for (let i = 0; i < img.data.length; i += 4) {
         const n = (Math.random() - 0.5) * 14;
@@ -858,41 +1258,232 @@ window.CONTENT = {
     }, { repeat: [3, 2] });
   }
 
-  function nightSkyTexture() {
-    return canvasTex(1024, 768, (g, w, h) => {
-      const bg = g.createLinearGradient(0, 0, 0, h);
-      bg.addColorStop(0, "#0a1030"); bg.addColorStop(0.7, "#1b1b4a"); bg.addColorStop(1, "#3b2a55");
-      g.fillStyle = bg; g.fillRect(0, 0, w, h);
-      // nebula haze
+  // ---------- sky for every time of day and weather ----------
+  const SKY = {
+    night: ["#0a1030", "#1b1b4a", "#3b2a55"],
+    dawn:  ["#3b2f6b", "#e07a5f", "#f6c98a"],
+    day:   ["#3f95e0", "#7cc0f2", "#d6eeff"],
+    dusk:  ["#2a2560", "#c1566b", "#f2a541"]
+  };
+  const GREY  = { night: "#1a1d2a", dawn: "#8a8590", day: "#9aa4b0", dusk: "#6a6270" };
+  const HAZE  = { night: "#2a2f40", dawn: "#c9bfc2", day: "#d4dade", dusk: "#a89aa0" };
+  const HILLS = { night: "#0c0a18", dawn: "#2a2440", day: "#3d5a4a", dusk: "#1e1a30" };
+  const DULL  = { sunny: 0, cloudy: 0.5, rainy: 0.8, foggy: 0.6, snowy: 0.6 };
+
+  function hexMix(a, b, t) {
+    const A = parseInt(a.slice(1), 16), B = parseInt(b.slice(1), 16);
+    const ch = sh => Math.round(((A >> sh) & 255) * (1 - t) + ((B >> sh) & 255) * t);
+    return "#" + ((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1);
+  }
+  const hexRgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; };
+
+  function drawSky(g, w, h, phase, weather) {
+    const dull = DULL[weather];
+    let cols = SKY[phase].map(c => hexMix(c, GREY[phase], dull));
+    if (weather === "foggy") cols = cols.map(c => hexMix(c, HAZE[phase], 0.55));
+    if (weather === "snowy") cols = cols.map(c => hexMix(c, phase === "night" ? "#2b3350" : "#c8d2de", 0.35));
+    const bg = g.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, cols[0]); bg.addColorStop(0.7, cols[1]); bg.addColorStop(1, cols[2]);
+    g.fillStyle = bg; g.fillRect(0, 0, w, h);
+    const clear = weather === "sunny", partly = weather === "cloudy";
+
+    if (phase === "night" && clear) {
       [["rgba(120,80,190,.20)", 0.3, 0.35, 320], ["rgba(242,165,65,.10)", 0.75, 0.6, 260], ["rgba(111,211,224,.10)", 0.6, 0.2, 240]].forEach(([c, x, y, r]) => {
         const gr = g.createRadialGradient(x * w, y * h, 0, x * w, y * h, r);
         gr.addColorStop(0, c); gr.addColorStop(1, "rgba(0,0,0,0)");
         g.fillStyle = gr; g.fillRect(0, 0, w, h);
       });
-      for (let i = 0; i < 700; i++) {
+    }
+    if (phase === "night" && (clear || partly)) {
+      const n = clear ? 700 : 160;
+      for (let i = 0; i < n; i++) {
         const r = Math.random() < 0.94 ? Math.random() * 1.1 + 0.3 : Math.random() * 2 + 1.2;
         g.fillStyle = `rgba(255,${230 + Math.random() * 25},${200 + Math.random() * 55},${0.4 + Math.random() * 0.6})`;
-        g.beginPath(); g.arc(Math.random() * w, Math.random() * h * 0.92, r, 0, TAU); g.fill();
+        g.beginPath(); g.arc(Math.random() * w, Math.random() * h * 0.8, r, 0, TAU); g.fill();
       }
-      // moon
-      const mx = w * 0.78, my = h * 0.26, mr = 46;
-      const glow = g.createRadialGradient(mx, my, mr * 0.6, mx, my, mr * 3);
-      glow.addColorStop(0, "rgba(255,240,210,.35)"); glow.addColorStop(1, "rgba(255,240,210,0)");
-      g.fillStyle = glow; g.fillRect(0, 0, w, h);
-      g.fillStyle = "#f3ead6"; g.beginPath(); g.arc(mx, my, mr, 0, TAU); g.fill();
-      g.fillStyle = "rgba(170,160,140,.35)";
-      [[-12, -8, 10], [14, 10, 7], [4, -20, 5], [-16, 16, 6]].forEach(([dx, dy, r]) => { g.beginPath(); g.arc(mx + dx, my + dy, r, 0, TAU); g.fill(); });
-      // distant hills / city line
-      g.fillStyle = "#0c0a18";
-      g.beginPath(); g.moveTo(0, h);
-      for (let x = 0; x <= w; x += 16) g.lineTo(x, h * 0.86 - Math.sin(x * 0.006) * 30 - Math.sin(x * 0.02) * 8);
-      g.lineTo(w, h); g.fill();
-      for (let i = 0; i < 40; i++) {
-        g.fillStyle = `rgba(255,${180 + Math.random() * 60},90,${0.5 + Math.random() * 0.5})`;
+    }
+    if (clear || partly) {           // the moon or the sun
+      g.save(); g.globalAlpha = clear ? 1 : 0.6;
+      if (phase === "night") {
+        const mx = w * 0.78, my = h * 0.26, mr = 46;
+        const glow = g.createRadialGradient(mx, my, mr * 0.6, mx, my, mr * 3);
+        glow.addColorStop(0, "rgba(255,240,210,.35)"); glow.addColorStop(1, "rgba(255,240,210,0)");
+        g.fillStyle = glow; g.fillRect(0, 0, w, h);
+        g.fillStyle = "#f3ead6"; g.beginPath(); g.arc(mx, my, mr, 0, TAU); g.fill();
+        g.fillStyle = "rgba(170,160,140,.35)";
+        [[-12, -8, 10], [14, 10, 7], [4, -20, 5], [-16, 16, 6]].forEach(([dx, dy, r]) => { g.beginPath(); g.arc(mx + dx, my + dy, r, 0, TAU); g.fill(); });
+      } else {
+        const pos = { dawn: [0.2, 0.68], day: [0.7, 0.22], dusk: [0.82, 0.64] }[phase];
+        const x = w * pos[0], y = h * pos[1], r = phase === "day" ? 52 : 64;
+        const core = phase === "day" ? "#fff6d0" : "#ffb27a";
+        const glow = g.createRadialGradient(x, y, r * 0.5, x, y, r * 4.5);
+        glow.addColorStop(0, hexRgba(core, 0.6)); glow.addColorStop(1, hexRgba(core, 0));
+        g.fillStyle = glow; g.fillRect(0, 0, w, h);
+        g.fillStyle = core; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
+      }
+      g.restore();
+    }
+
+    let hill = hexMix(HILLS[phase], GREY[phase], dull * 0.5);
+    if (weather === "foggy") hill = hexMix(hill, HAZE[phase], 0.55);
+    if (weather === "snowy") hill = phase === "night" ? "#48546e" : "#cfd9e4";
+    const ridge = x => h * 0.86 - Math.sin(x * 0.006) * 30 - Math.sin(x * 0.02) * 8;
+    g.fillStyle = hill; g.beginPath(); g.moveTo(0, h);
+    for (let x = 0; x <= w; x += 16) g.lineTo(x, ridge(x));
+    g.lineTo(w, h); g.fill();
+    if (weather === "snowy") {
+      g.strokeStyle = "#f4f8fc"; g.lineWidth = 4; g.beginPath();
+      for (let x = 0; x <= w; x += 16) (x === 0 ? g.moveTo(x, ridge(x)) : g.lineTo(x, ridge(x)));
+      g.stroke();
+    }
+    if (phase !== "day") {           // lights in the valley
+      const n = phase === "night" ? 40 : 22, a0 = weather === "foggy" ? 0.35 : 1;
+      for (let i = 0; i < n; i++) {
+        g.fillStyle = `rgba(255,${180 + Math.random() * 60},90,${(0.5 + Math.random() * 0.5) * a0})`;
         g.fillRect(Math.random() * w, h * 0.9 + Math.random() * h * 0.08, 2, 2);
       }
+    }
+    if (weather === "foggy") {
+      const f = g.createLinearGradient(0, h * 0.35, 0, h);
+      f.addColorStop(0, "rgba(255,255,255,0)"); f.addColorStop(1, hexRgba(HAZE[phase], 0.8));
+      g.fillStyle = f; g.fillRect(0, 0, w, h);
+    }
+  }
+  const skyTexture = (phase, weather) => canvasTex(1024, 768, (g, w, h) => drawSky(g, w, h, phase, weather));
+
+  // ---------- tileable layers that drift across the window ----------
+  function cloudTile(count, rMin, rMax, alpha) {
+    return canvasTex(1024, 256, (g, w, h) => {
+      g.clearRect(0, 0, w, h);
+      for (let i = 0; i < count; i++) {
+        const x = Math.random() * w, y = h * (0.2 + Math.random() * 0.6), r = rMin + Math.random() * (rMax - rMin);
+        for (const dx of [-w, 0, w]) {
+          const gr = g.createRadialGradient(x + dx, y, 0, x + dx, y, r);
+          gr.addColorStop(0, `rgba(255,255,255,${alpha})`); gr.addColorStop(0.5, `rgba(255,255,255,${alpha * 0.45})`); gr.addColorStop(1, "rgba(255,255,255,0)");
+          g.fillStyle = gr; g.beginPath(); g.ellipse(x + dx, y, r * 1.8, r * 0.7, 0, 0, TAU); g.fill();
+        }
+      }
+    }, { repeat: [1, 1] });
+  }
+  function hazeTile() {
+    return canvasTex(512, 256, (g, w, h) => {
+      g.clearRect(0, 0, w, h);
+      for (let i = 0; i < 26; i++) {
+        const x = Math.random() * w, y = Math.random() * h, rx = 120 + Math.random() * 140, ry = 14 + Math.random() * 30, a = 0.10 + Math.random() * 0.14;
+        for (const dx of [-w, 0, w]) {
+          const gr = g.createRadialGradient(x + dx, y, 0, x + dx, y, rx);
+          gr.addColorStop(0, `rgba(255,255,255,${a})`); gr.addColorStop(1, "rgba(255,255,255,0)");
+          g.save(); g.translate(x + dx, y); g.scale(1, ry / rx); g.translate(-(x + dx), -y);
+          g.fillStyle = gr; g.beginPath(); g.arc(x + dx, y, rx, 0, TAU); g.fill(); g.restore();
+        }
+      }
+    }, { repeat: [1, 1] });
+  }
+  function dropletTexture() {
+    return canvasTex(512, 512, (g, w, h) => {
+      g.clearRect(0, 0, w, h);
+      for (let i = 0; i < 26; i++) {
+        const x = Math.random() * w, y0 = Math.random() * h, len = 60 + Math.random() * 180;
+        const gr = g.createLinearGradient(0, y0, 0, y0 + len);
+        gr.addColorStop(0, "rgba(220,235,255,0)"); gr.addColorStop(0.8, "rgba(220,235,255,.25)"); gr.addColorStop(1, "rgba(255,255,255,.5)");
+        g.strokeStyle = gr; g.lineWidth = 1.5 + Math.random() * 2;
+        g.beginPath(); g.moveTo(x, y0); g.lineTo(x + (Math.random() - 0.5) * 6, y0 + len); g.stroke();
+      }
+      for (let i = 0; i < 160; i++) {
+        const x = Math.random() * w, y = Math.random() * h, r = 1.5 + Math.random() * 4.5;
+        const gr = g.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
+        gr.addColorStop(0, "rgba(255,255,255,.6)"); gr.addColorStop(0.6, "rgba(200,220,245,.22)"); gr.addColorStop(1, "rgba(200,220,245,.05)");
+        g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r * 0.85, r, 0, 0, TAU); g.fill();
+      }
+    }, { repeat: [1, 1] });
+  }
+
+  // ---------- the three books ----------
+  const BOOK_SPECS = [
+    { title: "MANAGEMENT", lines: ["MANAGEMENT"], sub: "Projects \u00b7 Teams \u00b7 Delivery", color: "#2f4b7c", foil: "#f2c46b", art: "gantt", w: 0.245, h: 0.04, d: 0.17 },
+    { title: "BLOCKCHAIN", lines: ["BLOCKCHAIN"], sub: "Ledgers & Smart Contracts", color: "#6b2e3e", foil: "#e8c27a", art: "chain", w: 0.23, h: 0.036, d: 0.165 },
+    { title: "ARTIFICIAL INTELLIGENCE", lines: ["ARTIFICIAL", "INTELLIGENCE"], sub: "Machine Learning & Language Models", color: "#0f3d47", foil: "#7fd6c4", art: "net", w: 0.24, h: 0.04, d: 0.17 }
+  ];
+  const ART = {
+    gantt(g, w, h, foil) {
+      g.fillStyle = foil;
+      const x0 = w * 0.2, y0 = h * 0.16, bh = 20, gap = 14;
+      [[0, 0.22], [0.14, 0.3], [0.34, 0.26], [0.5, 0.32]].forEach(([a, b], i) => g.fillRect(x0 + a * w * 0.6, y0 + i * (bh + gap), b * w * 0.6, bh));
+      const dx = w * 0.74, dy = y0 + 4 * (bh + gap) + 4;
+      g.beginPath(); g.moveTo(dx, dy - 16); g.lineTo(dx + 16, dy); g.lineTo(dx, dy + 16); g.lineTo(dx - 16, dy); g.closePath(); g.fill();
+    },
+    chain(g, w, h, foil) {
+      const y = h * 0.3, s = 46, gap = 34, n = 4, total = n * s + (n - 1) * gap, x0 = (w - total) / 2;
+      g.strokeStyle = foil; g.fillStyle = foil; g.lineWidth = 6;
+      for (let i = 0; i < n; i++) {
+        const x = x0 + i * (s + gap);
+        g.strokeRect(x, y - s / 2, s, s);
+        g.globalAlpha = 0.35; g.fillRect(x + 8, y - s / 2 + 8, s - 16, s - 16); g.globalAlpha = 1;
+        if (i < n - 1) { g.beginPath(); g.moveTo(x + s, y); g.lineTo(x + s + gap, y); g.stroke(); }
+      }
+    },
+    net(g, w, h, foil) {
+      const layers = [3, 4, 3], xs = [w * 0.28, w * 0.5, w * 0.72], top = h * 0.14, bot = h * 0.46;
+      const pts = layers.map((n, li) => Array.from({ length: n }, (_, i) => [xs[li], top + (bot - top) * ((i + 0.5) / n)]));
+      g.strokeStyle = foil; g.globalAlpha = 0.45; g.lineWidth = 2;
+      for (let l = 0; l < 2; l++) pts[l].forEach(a => pts[l + 1].forEach(b => { g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); }));
+      g.globalAlpha = 1; g.fillStyle = foil;
+      pts.flat().forEach(pt => { g.beginPath(); g.arc(pt[0], pt[1], 9, 0, TAU); g.fill(); });
+    }
+  };
+  function bookCover(spec) {
+    return canvasTex(720, 510, (g, w, h) => {
+      g.fillStyle = spec.color; g.fillRect(0, 0, w, h);
+      const sh = g.createLinearGradient(0, 0, w, h); sh.addColorStop(0, "rgba(255,255,255,.12)"); sh.addColorStop(1, "rgba(0,0,0,.28)");
+      g.fillStyle = sh; g.fillRect(0, 0, w, h);
+      g.strokeStyle = spec.foil; g.lineWidth = 6; g.strokeRect(26, 26, w - 52, h - 52); g.lineWidth = 2; g.strokeRect(38, 38, w - 76, h - 76);
+      ART[spec.art](g, w, h, spec.foil);
+      g.fillStyle = spec.foil; g.textAlign = "center"; g.textBaseline = "middle";
+      const two = spec.lines.length > 1;
+      g.font = `700 ${two ? 50 : 64}px Georgia, 'Times New Roman', serif`;
+      spec.lines.forEach((l, i) => g.fillText(l, w / 2, two ? 300 + i * 58 : 330));
+      g.font = "italic 27px Georgia, 'Times New Roman', serif";
+      g.fillText(spec.sub, w / 2, 440);
+    }, { aniso: 8 });
+  }
+  function bookSpine(spec) {
+    return canvasTex(1024, Math.round(1024 * spec.h / spec.w), (g, w, h) => {
+      g.fillStyle = spec.color; g.fillRect(0, 0, w, h);
+      const sh = g.createLinearGradient(0, 0, 0, h); sh.addColorStop(0, "rgba(255,255,255,.14)"); sh.addColorStop(1, "rgba(0,0,0,.25)");
+      g.fillStyle = sh; g.fillRect(0, 0, w, h);
+      g.strokeStyle = spec.foil; g.lineWidth = 4;
+      [h * 0.14, h * 0.86].forEach(y => { g.beginPath(); g.moveTo(30, y); g.lineTo(w - 30, y); g.stroke(); });
+      g.fillStyle = spec.foil; g.textAlign = "center"; g.textBaseline = "middle";
+      let size = 78; g.font = `700 ${size}px Georgia, 'Times New Roman', serif`;
+      while (g.measureText(spec.title).width > w * 0.8 && size > 30) { size -= 2; g.font = `700 ${size}px Georgia, 'Times New Roman', serif`; }
+      g.fillText(spec.title, w / 2, h / 2 + 3);
+    }, { aniso: 8 });
+  }
+  function pagesTexture() {
+    return canvasTex(128, 64, (g, w, h) => {
+      g.fillStyle = "#efe7d4"; g.fillRect(0, 0, w, h);
+      g.strokeStyle = "rgba(120,100,70,.28)"; g.lineWidth = 1;
+      for (let y = 1; y < h; y += 3) { g.beginPath(); g.moveTo(0, y + 0.5); g.lineTo(w, y + 0.5); g.stroke(); }
     });
   }
+
+  // ---------- lighting per time of day, and how each weather changes it ----------
+  const PH = {
+    night: { hemiSky: "#9aa8ff", hemiGnd: "#3a2414", hemi: 0.38, dirCol: "#8ea6ff", dir: 0.45, bounceCol: "#ffe9d0", bounce: 0,    lamp: 1,    bg: "#120d12" },
+    dawn:  { hemiSky: "#ffc9a8", hemiGnd: "#4a3020", hemi: 0.55, dirCol: "#ffb07a", dir: 0.75, bounceCol: "#ffd9b8", bounce: 0.28, lamp: 0.7,  bg: "#241a20" },
+    day:   { hemiSky: "#cfe4ff", hemiGnd: "#8a7050", hemi: 1.25, dirCol: "#fff2d8", dir: 1.25, bounceCol: "#fff6ea", bounce: 0.6,  lamp: 0.04, bg: "#2f2b36" },
+    dusk:  { hemiSky: "#ffb48a", hemiGnd: "#3a2438", hemi: 0.5,  dirCol: "#ff9a6a", dir: 0.7,  bounceCol: "#ffc9a0", bounce: 0.22, lamp: 0.85, bg: "#1c141c" }
+  };
+  const WX = {
+    sunny:  { tone: null,      k: 0,    dir: 1,    hemi: 1,    lampMin: 0 },
+    cloudy: { tone: "#b8c0cc", k: 0.35, dir: 0.55, hemi: 0.95, lampMin: 0.1 },
+    rainy:  { tone: "#8fa0b8", k: 0.5,  dir: 0.25, hemi: 0.8,  lampMin: 0.55 },
+    foggy:  { tone: "#c8ced6", k: 0.55, dir: 0.3,  hemi: 0.95, lampMin: 0.3 },
+    snowy:  { tone: "#dce8f5", k: 0.5,  dir: 0.45, hemi: 1.05, lampMin: 0.3 }
+  };
+  const CLOUD_LIGHT = { night: "#3a4260", dawn: "#f0c5b4", day: "#ffffff", dusk: "#e0a08a" };
+  const CLOUD_DARK  = { night: "#232840", dawn: "#8f7f90", day: "#727b88", dusk: "#7a5f70" };
+  const FOG_TINT    = { night: "#38405a", dawn: "#d8c8c8", day: "#dfe5ea", dusk: "#c4a8a8" };
 
   function keyboardTexture() {
     return canvasTex(1024, 400, (g, w, h) => {
@@ -925,6 +1516,40 @@ window.CONTENT = {
   }
 
   // ======================================================================
+  // ---------- props you can tap: the CV sheet and the Egety coin ----------
+  function cvSheetTexture(name, role) {
+    return canvasTex(420, 594, (g, w, h) => {
+      g.fillStyle = "#f7f3ea"; g.fillRect(0, 0, w, h);
+      g.fillStyle = "#1f2a44"; g.fillRect(0, 0, w, 96);
+      g.textAlign = "left"; g.textBaseline = "middle";
+      g.fillStyle = "#f7f3ea"; g.font = "700 34px Georgia, 'Times New Roman', serif"; g.fillText(name, 28, 40);
+      g.fillStyle = "#f2c46b"; g.font = "500 16px Arial, sans-serif"; g.fillText(role, 28, 70);
+      g.fillStyle = "#c9a25e"; g.beginPath(); g.arc(w - 56, 48, 30, 0, TAU); g.fill();
+      g.fillStyle = "#1f2a44"; g.font = "700 30px Georgia, serif"; g.textAlign = "center"; g.fillText("CV", w - 56, 49); g.textAlign = "left";
+      const section = (y, title, lines) => {
+        g.fillStyle = "#1f2a44"; g.font = "700 15px Arial, sans-serif"; g.fillText(title, 28, y);
+        g.fillStyle = "#c9a25e"; g.fillRect(28, y + 12, 364, 2);
+        g.fillStyle = "#c4bfb0";
+        for (let i = 0; i < lines; i++) g.fillRect(28, y + 30 + i * 16, 364 - (i % 3 === 2 ? 120 : i % 2 ? 30 : 0), 6);
+        return y + 30 + lines * 16 + 14;
+      };
+      let y = 132;
+      y = section(y, "PROFILE", 3); y = section(y + 6, "WORK EXPERIENCE", 8); y = section(y + 6, "TECHNICAL LEADERSHIP", 5); section(y + 6, "EDUCATION", 3);
+    }, { aniso: 8 });
+  }
+  function coinTexture() {
+    return canvasTex(256, 256, (g, w) => {
+      const c = w / 2, gr = g.createRadialGradient(c * 0.8, c * 0.7, 10, c, c, c);
+      gr.addColorStop(0, "#ffe9a8"); gr.addColorStop(0.6, "#e0b04a"); gr.addColorStop(1, "#a9791f");
+      g.fillStyle = gr; g.fillRect(0, 0, w, w);
+      g.strokeStyle = "#7a5510"; g.lineWidth = 8; g.beginPath(); g.arc(c, c, c - 16, 0, TAU); g.stroke();
+      g.lineWidth = 3; g.beginPath(); g.arc(c, c, c - 30, 0, TAU); g.stroke();
+      g.fillStyle = "#6b4a0e"; g.textAlign = "center"; g.textBaseline = "middle";
+      g.font = "700 150px Georgia, 'Times New Roman', serif"; g.fillText("E", c, c - 8);
+      g.font = "700 22px Arial, sans-serif"; g.fillText("EGETY", c, c + 88);
+    });
+  }
+
   function DeskScene(renderer, opts) {
     this.renderer = renderer;
     this.mobile = opts.mobile;
@@ -944,6 +1569,10 @@ window.CONTENT = {
     this.mode = "intro";
     this.fly = null;
     this.hoverScreen = false;
+    this.hgHover = false;
+    this.hoverProp = null;
+    this.loc = { rtl: false, role: opts.role, tabs: ["Home", "Education", "Experience", "Projects", "Contact", "Resume", "Blog"], url: "devleb://home",
+                 lines: ["Backend / Blockchain / Intelligence & data", "BSc Computer Science"], cta: "Step inside" };
     this._build();
     this._buildScreen();
     this._updateHourglass(0);
@@ -958,11 +1587,14 @@ window.CONTENT = {
     const DESK_Y = 0.75;
     this.DESK_Y = DESK_Y;
 
-    // --- lights
-    s.add(new T.HemisphereLight(0x9aa8ff, 0x3a2414, 0.38));
+    // --- lights (their colour and strength follow the time of day and weather, see _initEnv)
+    this.hemi = new T.HemisphereLight(0x9aa8ff, 0x3a2414, 0.38); s.add(this.hemi);
     const moon = new T.DirectionalLight(0x8ea6ff, 0.45);
     moon.position.set(0.8, 2.6, -2.5);
-    s.add(moon);
+    s.add(moon); this.sunMoon = moon;
+    const bounce = new T.DirectionalLight(0xfff6ea, 0);
+    bounce.position.set(-1.2, 1.6, 2.5);
+    s.add(bounce); this.bounce = bounce;
 
     // --- room
     const floor = new T.Mesh(new T.PlaneGeometry(12, 12), new T.MeshStandardMaterial({ color: "#0c0909", roughness: 1 }));
@@ -974,9 +1606,33 @@ window.CONTENT = {
 
     // window on the wall
     const win = new T.Group();
-    const skyMat = new T.MeshBasicMaterial({ map: nightSkyTexture(), toneMapped: false });
-    const sky = new T.Mesh(new T.PlaneGeometry(1.2, 0.86), skyMat);
+    const winGeo = new T.PlaneGeometry(1.2, 0.86);
+    const sky = new T.Mesh(winGeo, new T.MeshBasicMaterial({ map: skyTexture("night", "sunny"), toneMapped: false }));
     win.add(sky);
+    const sky2 = new T.Mesh(winGeo, new T.MeshBasicMaterial({ map: canvasTex(4, 4, () => {}), transparent: true, opacity: 0, toneMapped: false, depthWrite: false }));
+    sky2.position.z = 0.002; sky2.renderOrder = 1; sky2.visible = false; win.add(sky2);
+    this.sky = { a: sky, b: sky2 };
+    const layer = (tex, w, hh, y, z, order) => {
+      const m = new T.Mesh(new T.PlaneGeometry(w, hh), new T.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, fog: false }));
+      m.position.set(0, y, z); m.renderOrder = order; m.visible = false; win.add(m); return m;
+    };
+    this.layers = {
+      sparse: layer(cloudTile(7, 60, 110, 0.85), 1.2, 0.5, 0.18, 0.003, 2),
+      dense: layer(cloudTile(16, 70, 130, 0.9), 1.2, 0.7, 0.08, 0.004, 3),
+      fog: layer(hazeTile(), 1.2, 0.86, 0, 0.005, 4),
+      glass: layer(dropletTexture(), 1.2, 0.86, 0, 0.047, 7)
+    };
+    const rainN = this.mobile ? 110 : 200, snowN = this.mobile ? 80 : 150;
+    this.rain = { n: rainN, x: new Float32Array(rainN), y: new Float32Array(rainN), v: new Float32Array(rainN), l: new Float32Array(rainN), pos: new Float32Array(rainN * 6) };
+    for (let i = 0; i < rainN; i++) { this.rain.x[i] = (Math.random() - 0.5) * 1.16; this.rain.y[i] = (Math.random() - 0.5) * 0.84; this.rain.v[i] = 1.4 + Math.random() * 1.2; this.rain.l[i] = 0.04 + Math.random() * 0.05; }
+    const rg = new T.BufferGeometry(); rg.setAttribute("position", new T.BufferAttribute(this.rain.pos, 3));
+    this.rainMesh = new T.LineSegments(rg, new T.LineBasicMaterial({ color: 0xc4d8f0, transparent: true, opacity: 0, depthWrite: false, fog: false }));
+    this.rainMesh.position.z = 0.012; this.rainMesh.renderOrder = 5; this.rainMesh.frustumCulled = false; this.rainMesh.visible = false; win.add(this.rainMesh);
+    this.snow = { n: snowN, x: new Float32Array(snowN), y: new Float32Array(snowN), v: new Float32Array(snowN), ph: new Float32Array(snowN), pos: new Float32Array(snowN * 3) };
+    for (let i = 0; i < snowN; i++) { this.snow.x[i] = (Math.random() - 0.5) * 1.16; this.snow.y[i] = (Math.random() - 0.5) * 0.84; this.snow.v[i] = 0.05 + Math.random() * 0.06; this.snow.ph[i] = Math.random() * TAU; }
+    const sg = new T.BufferGeometry(); sg.setAttribute("position", new T.BufferAttribute(this.snow.pos, 3));
+    this.snowMesh = new T.Points(sg, new T.PointsMaterial({ size: 0.017, map: softDot("255,255,255"), transparent: true, opacity: 0, depthWrite: false, fog: false }));
+    this.snowMesh.position.z = 0.012; this.snowMesh.renderOrder = 5; this.snowMesh.frustumCulled = false; this.snowMesh.visible = false; win.add(this.snowMesh);
     const frameMat = new T.MeshStandardMaterial({ color: "#2a2230", roughness: 0.7 });
     const bars = [[1.3, 0.05, 0, 0.455], [1.3, 0.05, 0, -0.455], [0.05, 0.96, -0.625, 0], [0.05, 0.96, 0.625, 0], [0.03, 0.9, 0, 0], [1.25, 0.03, 0, 0]];
     bars.forEach(([w, h, x, y]) => { const b = new T.Mesh(new T.BoxGeometry(w, h, 0.05), frameMat); b.position.set(x, y, 0.02); win.add(b); });
@@ -1056,7 +1712,7 @@ window.CONTENT = {
     const shade = new T.Mesh(new T.ConeGeometry(0.085, 0.13, 40, 1, true), new T.MeshStandardMaterial({ color: "#23262d", metalness: 0.55, roughness: 0.35, side: T.DoubleSide }));
     shade.castShadow = true;
     head.add(shade);
-    const bulb = new T.Mesh(new T.SphereGeometry(0.03, 20, 16), new T.MeshBasicMaterial({ color: "#ffd9a0", toneMapped: false }));
+    const bulb = new T.Mesh(new T.SphereGeometry(0.03, 20, 16), new T.MeshBasicMaterial({ color: "#ffd9a0", toneMapped: false })); this.bulb = bulb;
     bulb.position.y = -0.03; head.add(bulb);
     // point the lamp head toward the laptop
     const headWorld = new T.Vector3(); head.getWorldPosition(headWorld);
@@ -1071,7 +1727,7 @@ window.CONTENT = {
     spot.shadow.camera.near = 0.1; spot.shadow.camera.far = 3;
     s.add(spot); s.add(spot.target);
     this.spot = spot;
-    const warmFill = new T.PointLight(0xff9a4a, 0.35, 2.2, 2); warmFill.position.copy(headWorld); s.add(warmFill);
+    const warmFill = new T.PointLight(0xff9a4a, 0.35, 2.2, 2); warmFill.position.copy(headWorld); s.add(warmFill); this.warmFill = warmFill;
 
     // dust drifting in the lamp beam
     const dustN = this.mobile ? 70 : 140;
@@ -1126,24 +1782,57 @@ window.CONTENT = {
     }
     this.plant = plant;
 
-    // --- books
-    const books = new T.Group(); books.position.set(-0.52, DESK_Y, 0.25); books.rotation.y = 0.35; s.add(books);
-    [["#2f4b7c", 0.24, 0.035, 0.17], ["#b8863b", 0.22, 0.03, 0.16], ["#6b2e3e", 0.235, 0.04, 0.165]].reduce((y, [c, w, h, d], i) => {
-      const b = new T.Mesh(new T.BoxGeometry(w, h, d), new T.MeshStandardMaterial({ color: c, roughness: 0.8 }));
-      b.position.set((i - 1) * 0.008, y + h / 2, 0); b.rotation.y = (i - 1) * 0.08; b.castShadow = true; b.receiveShadow = true; books.add(b);
-      const pages = new T.Mesh(new T.BoxGeometry(w - 0.01, h - 0.008, d - 0.004), new T.MeshStandardMaterial({ color: "#efe7d4", roughness: 0.9 }));
-      pages.position.copy(b.position); pages.position.x += 0.006; pages.rotation.copy(b.rotation); books.add(pages);
+    // --- books: management, blockchain and AI, stacked bottom to top
+    const books = new T.Group(); books.position.set(-0.52, DESK_Y, 0.25); books.rotation.y = 0.35; s.add(books); this.booksGroup = books;
+    const pageTex = pagesTexture();
+    BOOK_SPECS.reduce((y, spec, i) => {
+      const { w, h, d } = spec, t = 0.004;
+      const b = new T.Group();
+      const cloth = new T.MeshStandardMaterial({ color: spec.color, roughness: 0.75 });
+      const pageMat = new T.MeshStandardMaterial({ map: pageTex, roughness: 0.95 });
+      const topMats = [cloth, cloth, new T.MeshStandardMaterial({ map: bookCover(spec), roughness: 0.6 }), cloth, cloth, cloth];
+      const spineMats = [cloth, cloth, cloth, cloth, new T.MeshStandardMaterial({ map: bookSpine(spec), roughness: 0.6 }), cloth];
+      const bottom = new T.Mesh(new T.BoxGeometry(w, t, d), cloth); bottom.position.y = t / 2;
+      const top = new T.Mesh(new T.BoxGeometry(w, t, d), topMats); top.position.y = h - t / 2;
+      const spine = new T.Mesh(new T.BoxGeometry(w, h, t), spineMats); spine.position.set(0, h / 2, d / 2 - t / 2);
+      const pages = new T.Mesh(new T.BoxGeometry(w - 0.008, h - 2 * t - 0.002, d - t - 0.006), pageMat); pages.position.set(0, h / 2, -t / 2 - 0.001);
+      [bottom, top, spine, pages].forEach(m => { m.castShadow = true; m.receiveShadow = true; b.add(m); });
+      b.position.set((i - 1) * 0.008, y, 0); b.rotation.y = (i - 1) * 0.08;
+      books.add(b);
       return y + h;
     }, 0);
 
     // --- notebook + pen
     const note = new T.Mesh(new T.BoxGeometry(0.15, 0.008, 0.21), new T.MeshStandardMaterial({ color: "#1f3a3d", roughness: 0.85 }));
-    note.position.set(0.36, DESK_Y + 0.004, 0.36); note.rotation.y = -0.25; note.castShadow = true; note.receiveShadow = true; s.add(note);
+    note.position.set(0.5, DESK_Y + 0.004, 0.4); note.rotation.y = -0.25; note.castShadow = true; note.receiveShadow = true; s.add(note);
     const pen = new T.Mesh(new T.CylinderGeometry(0.004, 0.004, 0.14, 10), new T.MeshStandardMaterial({ color: "#f2a541", metalness: 0.4, roughness: 0.3 }));
-    pen.rotation.z = Math.PI / 2; pen.rotation.y = 0.6; pen.position.set(0.37, DESK_Y + 0.013, 0.36); pen.castShadow = true; s.add(pen);
+    pen.rotation.z = Math.PI / 2; pen.rotation.y = 0.6; pen.position.set(0.51, DESK_Y + 0.013, 0.4); pen.castShadow = true; s.add(pen);
+
+    // --- CV sheet: tap it to open the CV
+    const cvGroup = new T.Group(); cvGroup.position.set(0.25, DESK_Y + 0.001, 0.45); cvGroup.rotation.y = 0.12; s.add(cvGroup);
+    const paper = new T.MeshStandardMaterial({ color: "#f3eee2", roughness: 0.9 });
+    const sheet = new T.Mesh(new T.BoxGeometry(0.148, 0.002, 0.21), [paper, paper, new T.MeshStandardMaterial({ map: cvSheetTexture(this.profileName, this.role), roughness: 0.85 }), paper, paper, paper]);
+    sheet.position.y = 0.001; sheet.castShadow = true; sheet.receiveShadow = true; cvGroup.add(sheet);
+    const cvHit = new T.Mesh(new T.BoxGeometry(0.17, 0.03, 0.23), new T.MeshBasicMaterial({ visible: false }));
+    cvHit.position.y = 0.012; cvHit.userData.prop = "cv"; cvGroup.add(cvHit);
+    this.cvGroup = cvGroup; this.cvHit = cvHit;
+
+    // --- Egety coin on a little stand: tap it to see the project
+    const coinBase = new T.Group(); coinBase.position.set(-0.4, DESK_Y, -0.26); s.add(coinBase);
+    const brass2 = new T.MeshStandardMaterial({ color: "#b8945a", metalness: 0.7, roughness: 0.35 });
+    const cBase = new T.Mesh(new T.CylinderGeometry(0.03, 0.034, 0.008, 32), brass2); cBase.position.y = 0.004; cBase.castShadow = true; coinBase.add(cBase);
+    const cPost = new T.Mesh(new T.CylinderGeometry(0.0025, 0.0025, 0.08, 8), brass2); cPost.position.y = 0.048; coinBase.add(cPost);
+    const coinSpin = new T.Group(); coinSpin.position.y = 0.098; coinBase.add(coinSpin);
+    const rimMat = new T.MeshStandardMaterial({ color: "#c9992e", metalness: 0.7, roughness: 0.35 });
+    const faceMat = new T.MeshStandardMaterial({ map: coinTexture(), metalness: 0.5, roughness: 0.4, emissive: "#3a2a08", emissiveIntensity: 0.35 });
+    const coinMesh = new T.Mesh(new T.CylinderGeometry(0.038, 0.038, 0.007, 48), [rimMat, faceMat, faceMat]);
+    coinMesh.rotation.x = Math.PI / 2; coinMesh.castShadow = true; coinSpin.add(coinMesh);
+    const coinHit = new T.Mesh(new T.CylinderGeometry(0.065, 0.065, 0.14, 12), new T.MeshBasicMaterial({ visible: false }));
+    coinHit.position.y = 0.09; coinHit.userData.prop = "coin"; coinBase.add(coinHit);
+    this.coin = { group: coinBase, spin: coinSpin, boost: 0 }; this.coinHit = coinHit;
 
     // --- hourglass: the desk's hint at what is inside the laptop
-    const hg = new T.Group(); hg.position.set(0.5, DESK_Y, -0.3); s.add(hg);
+    const hg = new T.Group(); hg.position.set(0.5, DESK_Y, -0.3); s.add(hg); this.hgGroup = hg;
     const brass = new T.MeshStandardMaterial({ color: "#b8945a", metalness: 0.7, roughness: 0.35 });
     const spin = new T.Group(); spin.position.y = 0.088; hg.add(spin);
     [0.08, -0.08].forEach(y => { const pl = new T.Mesh(new T.CylinderGeometry(0.05, 0.05, 0.01, 32), brass); pl.position.y = y; pl.castShadow = true; spin.add(pl); });
@@ -1158,7 +1847,12 @@ window.CONTENT = {
     const topSand = new T.Mesh(new T.CylinderGeometry(0.03, 0.005, 1, 20), sandMat); spin.add(topSand);
     const botSand = new T.Mesh(new T.ConeGeometry(0.033, 1, 20), sandMat); spin.add(botSand);
     const stream = new T.Mesh(new T.CylinderGeometry(0.0012, 0.0012, 0.07, 6), sandMat); stream.position.y = -0.03; spin.add(stream);
-    this.hourglass = { spin, topSand, botSand, stream, t: 0 };
+    // a generous invisible target so a fingertip can hit it, and a soft glow that invites a flip
+    const hgHit = new T.Mesh(new T.CylinderGeometry(0.085, 0.085, 0.24, 12), new T.MeshBasicMaterial({ visible: false }));
+    hgHit.position.y = 0.11; hgHit.userData.prop = "hourglass"; hg.add(hgHit); this.hgHit = hgHit;
+    const hgHint = new T.Sprite(new T.SpriteMaterial({ map: softDot("242,165,65"), transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending }));
+    hgHint.scale.setScalar(0.3); hgHint.position.y = 0.09; hg.add(hgHint);
+    this.hourglass = { spin, topSand, botSand, stream, hint: hgHint, n: 0, k: 0, flipT: null, RUN: 45 };
 
     // raycast targets
     this.raycaster = new T.Raycaster();
@@ -1168,6 +1862,8 @@ window.CONTENT = {
     this.introLook = new T.Vector3(0.02, DESK_Y + 0.17, -0.04);
     this.introPosBase = new T.Vector3(0.42, DESK_Y + 0.58, 1.38);
     this.introPos = this.introPosBase.clone();
+
+    this._initEnv();
   };
 
   // ---------- the laptop screen (canvas) ----------
@@ -1193,8 +1889,10 @@ window.CONTENT = {
       g.fillStyle = `rgba(234,230,218,${a})`;
       g.beginPath(); g.arc(st.x * w, st.y * h, st.r, 0, TAU); g.fill();
     });
+    const L = this.loc, rtl = !!L.rtl, fx = x => (rtl ? w - x : x);      // fx mirrors a position for right-to-left
+    const FONT = "'Cairo', 'Instrument Sans', system-ui, sans-serif";
     // time dial: a brass-rimmed clock whose minute hand runs backwards
-    const px = w * 0.77, py = h * 0.58, pr = 150;
+    const px = w * (rtl ? 0.23 : 0.77), py = h * 0.58, pr = 150;
     const halo = g.createRadialGradient(px, py, pr * 0.7, px, py, pr * 2.1);
     halo.addColorStop(0, "rgba(242,165,65,.32)"); halo.addColorStop(1, "rgba(242,165,65,0)");
     g.fillStyle = halo; g.fillRect(0, 0, w, h);
@@ -1224,43 +1922,45 @@ window.CONTENT = {
     g.fillStyle = "#f2a541"; g.beginPath(); g.arc(px, py, 9, 0, TAU); g.fill();
 
     // browser chrome
+    g.direction = rtl ? "rtl" : "ltr";
     g.fillStyle = "rgba(10,14,34,.92)"; g.fillRect(0, 0, w, 104);
-    ["#ff6b5a", "#f2c14e", "#57c26a"].forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.arc(34 + i * 30, 30, 9, 0, TAU); g.fill(); });
-    const tabs = ["Home", "Education", "Experience", "Projects", "Contact", "Resume", "Blog"];
-    let tx = 140;
-    g.font = "500 20px 'Instrument Sans', system-ui, sans-serif";
-    tabs.forEach((name, i) => {
-      const tw = g.measureText(name).width + 44;
-      if (i === 0) { g.fillStyle = "rgba(234,230,218,.12)"; g.beginPath(); (g.roundRect ? g.roundRect(tx, 10, tw, 40, 10) : g.rect(tx, 10, tw, 40)); g.fill(); }
+    ["#ff6b5a", "#f2c14e", "#57c26a"].forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.arc(fx(34 + i * 30), 30, 9, 0, TAU); g.fill(); });
+    g.font = `500 20px ${FONT}`; g.textAlign = "center";
+    let tx = fx(140);
+    L.tabs.forEach((name, i) => {
+      const tw = g.measureText(name).width + 44, x0 = rtl ? tx - tw : tx;
+      if (i === 0) { g.fillStyle = "rgba(234,230,218,.12)"; g.beginPath(); (g.roundRect ? g.roundRect(x0, 10, tw, 40, 10) : g.rect(x0, 10, tw, 40)); g.fill(); }
       g.fillStyle = i === 0 ? "#eae6da" : "rgba(234,230,218,.55)";
-      g.fillText(name, tx + 22, 37);
-      tx += tw + 6;
+      g.fillText(name, x0 + tw / 2, 37);
+      tx += rtl ? -(tw + 6) : tw + 6;
     });
     g.fillStyle = "rgba(234,230,218,.08)";
-    g.beginPath(); (g.roundRect ? g.roundRect(140, 60, w - 180, 34, 17) : g.rect(140, 60, w - 180, 34)); g.fill();
-    g.fillStyle = "rgba(234,230,218,.7)"; g.font = "400 18px 'Instrument Sans', system-ui, sans-serif";
-    g.fillText("devleb://home", 162, 83);
+    g.beginPath(); (g.roundRect ? g.roundRect(rtl ? 40 : 140, 60, w - 180, 34, 17) : g.rect(rtl ? 40 : 140, 60, w - 180, 34)); g.fill();
+    g.fillStyle = "rgba(234,230,218,.7)"; g.font = `400 18px ${FONT}`; g.direction = "ltr"; g.textAlign = rtl ? "right" : "left";
+    g.fillText(L.url, rtl ? w - 162 : 162, 83);
 
     // hero text
+    g.direction = rtl ? "rtl" : "ltr"; g.textAlign = rtl ? "right" : "left";
     g.fillStyle = "#eae6da";
-    g.font = "600 76px 'Unbounded', 'Instrument Sans', system-ui, sans-serif";
-    g.fillText(this.profileName, 86, 330);
+    g.font = `600 76px 'Unbounded', ${FONT}`;
+    g.fillText(this.profileName, fx(86), 330);
     g.fillStyle = "#f2a541";
-    g.font = "500 30px 'Instrument Sans', system-ui, sans-serif";
-    g.fillText(this.role, 90, 385);
+    g.font = `500 30px ${FONT}`;
+    g.fillText(L.role, fx(90), 385);
     g.fillStyle = "rgba(234,230,218,.7)";
-    g.font = "400 24px 'Instrument Sans', system-ui, sans-serif";
-    ["Backend / Blockchain / Intelligence & data", "BSc Computer Science"].forEach((l, i) => g.fillText(l, 90, 440 + i * 36));
+    g.font = `400 24px ${FONT}`;
+    L.lines.forEach((l, i) => g.fillText(l, fx(90), 440 + i * 36));
 
     // call to action pulse
     const pulse = 0.5 + 0.5 * Math.sin(t * 3);
-    const hover = this.hoverScreen ? 1 : 0;
+    const hover = this.hoverScreen ? 1 : 0, bx = rtl ? w - 340 : 90;
     g.fillStyle = `rgba(242,165,65,${0.85 + 0.15 * hover})`;
-    g.beginPath(); (g.roundRect ? g.roundRect(90, 560, 250, 64, 32) : g.rect(90, 560, 250, 64)); g.fill();
+    g.beginPath(); (g.roundRect ? g.roundRect(bx, 560, 250, 64, 32) : g.rect(bx, 560, 250, 64)); g.fill();
     g.strokeStyle = `rgba(242,165,65,${0.4 * (1 - pulse)})`; g.lineWidth = 3 + pulse * 10;
-    g.beginPath(); (g.roundRect ? g.roundRect(90 - pulse * 8, 560 - pulse * 8, 250 + pulse * 16, 64 + pulse * 16, 40) : g.rect(90, 560, 250, 64)); g.stroke();
-    g.fillStyle = "#1a0f06"; g.font = "600 24px 'Instrument Sans', system-ui, sans-serif";
-    g.fillText("Step inside", 152, 600);
+    g.beginPath(); (g.roundRect ? g.roundRect(bx - pulse * 8, 560 - pulse * 8, 250 + pulse * 16, 64 + pulse * 16, 40) : g.rect(bx, 560, 250, 64)); g.stroke();
+    g.fillStyle = "#1a0f06"; g.font = `600 24px ${FONT}`; g.textAlign = "center";
+    g.fillText(L.cta, bx + 125, 600);
+    g.direction = "ltr"; g.textAlign = "left";
 
     // boot overlay
     if (p < 1) {
@@ -1277,19 +1977,178 @@ window.CONTENT = {
     this.screenTex.needsUpdate = true;
   };
 
-  // sand runs for 40 s, then the hourglass is lifted, flipped and set down again
+  // Which prop (if any) is under the pointer: "hourglass", "cv", "coin" or null.
+  DeskScene.prototype.pickProp = function (ndcX, ndcY) {
+    this.raycaster.setFromCamera({ x: ndcX, y: ndcY }, this.camera);
+    const hits = this.raycaster.intersectObjects([this.hgHit, this.cvHit, this.coinHit], false);
+    return hits.length ? hits[0].object.userData.prop : null;
+  };
+  DeskScene.prototype.setHoverProp = function (prop) { this.hoverProp = prop; this.hgHover = prop === "hourglass"; };
+  DeskScene.prototype.spinCoin = function () { this.coin.boost = 12; };
+  DeskScene.prototype._updateProps = function (dt) {
+    const c = this.coin;
+    if (this.reduced) c.spin.rotation.y = 0.5;
+    else { c.spin.rotation.y += dt * (0.9 + (this.hoverProp === "coin" ? 2.2 : 0) + c.boost); c.boost = Math.max(0, c.boost - dt * 6); }
+    const target = this.DESK_Y + 0.001 + (this.hoverProp === "cv" ? 0.014 : 0);
+    this.cvGroup.position.y += (target - this.cvGroup.position.y) * (this.reduced ? 1 : 1 - Math.exp(-dt * 10));
+  };
+
+  // text drawn on the laptop screen (English or Arabic, left-to-right or right-to-left)
+  DeskScene.prototype.setLocale = function (loc) { this.loc = Object.assign({}, this.loc, loc); };
+
+  // The sand runs for 45 s and then waits for the visitor to flip the hourglass.
+  // k = how much sand has fallen; n = how many times it has been flipped.
   DeskScene.prototype._updateHourglass = function (dt) {
-    const h = this.hourglass; h.t += dt;
-    const PERIOD = 40, FLIP = 1.2;
-    const n = Math.floor(h.t / PERIOD), p = h.t % PERIOD;
-    const flipK = clamp(p / FLIP, 0, 1), k = clamp((p - FLIP) / (PERIOD - FLIP), 0, 1);
-    h.spin.rotation.z = n === 0 ? 0 : Math.PI * (n - 1 + easeInOut(flipK));
-    h.spin.position.y = 0.088 + (n === 0 ? 0 : Math.sin(Math.PI * flipK) * 0.03);
-    const top = n % 2 === 0 ? 1 - k : k, bot = 1 - top;
+    const h = this.hourglass, FLIP = this.reduced ? 0.01 : 1.2;
+    let rot, lift = 0;
+    if (h.flipT !== null) {
+      h.flipT += dt;
+      const p = clamp(h.flipT / FLIP, 0, 1);
+      rot = Math.PI * (h.n - 1 + easeInOut(p)); lift = Math.sin(Math.PI * p) * 0.03;
+      if (p >= 1) h.flipT = null;
+    } else {
+      rot = Math.PI * h.n;
+      if (h.k < 1) h.k = Math.min(1, h.k + dt / h.RUN);
+    }
+    h.spin.rotation.z = rot; h.spin.position.y = 0.088 + lift;
+    const top = h.n % 2 === 0 ? 1 - h.k : h.k, bot = 1 - top;
     const th = Math.max(0.001, top * 0.055), bh = Math.max(0.001, bot * 0.05);
     h.topSand.scale.y = th; h.topSand.position.y = 0.006 + th / 2;
     h.botSand.scale.y = bh; h.botSand.position.y = -0.066 + bh / 2;
-    h.stream.visible = flipK >= 1 && k > 0.001 && k < 0.999;
+    h.stream.visible = h.flipT === null && h.k > 0.001 && h.k < 0.999;
+    const done = h.flipT === null && h.k >= 1;
+    h.hint.material.opacity = done ? 0.25 + 0.2 * Math.sin(this.clock * 3) : (this.hgHover ? 0.3 : 0);
+  };
+
+  DeskScene.prototype.hitHourglass = function (ndcX, ndcY) {
+    this.raycaster.setFromCamera({ x: ndcX, y: ndcY }, this.camera);
+    return this.raycaster.intersectObject(this.hgHit, false).length > 0;
+  };
+
+  // Flip it. Flipping mid-run sends the sand back up: what had fallen becomes what still has to fall.
+  DeskScene.prototype.flipHourglass = function () {
+    const h = this.hourglass;
+    if (h.flipT !== null) return false;
+    h.k = 1 - h.k; h.n++; h.flipT = 0;
+    return true;
+  };
+
+  // ---------- time of day + weather ----------
+  DeskScene.prototype._envTarget = function (phase, weather) {
+    const P = PH[phase], W = WX[weather];
+    const mixc = hex => { const c = new T.Color(hex); if (W.tone) c.lerp(new T.Color(W.tone), W.k); return c; };
+    const tint = new T.Color(CLOUD_LIGHT[phase]);
+    const dark = { sunny: 0, cloudy: 0.15, rainy: 0.6, foggy: 0.2, snowy: 0.1 }[weather];
+    tint.lerp(new T.Color(CLOUD_DARK[phase]), dark);
+    return {
+      hemiSky: mixc(P.hemiSky), hemiGnd: mixc(P.hemiGnd), dirCol: mixc(P.dirCol), bounceCol: mixc(P.bounceCol), bg: new T.Color(P.bg),
+      cloudTint: tint, fogTint: new T.Color(FOG_TINT[phase]),
+      hemi: P.hemi * W.hemi, dir: P.dir * W.dir, bounce: P.bounce * (weather === "sunny" ? 1 : 0.8), lamp: Math.max(P.lamp, W.lampMin),
+      rain: weather === "rainy" ? 1 : 0, snow: weather === "snowy" ? 1 : 0, fog: weather === "foggy" ? 1 : 0,
+      sparse: weather === "sunny" ? (phase === "night" ? 0.3 : 0.85) : weather === "cloudy" ? 0.5 : 0,
+      dense: { sunny: 0, cloudy: 0.65, rainy: 0.95, foggy: 0.3, snowy: 0.85 }[weather],
+      glass: weather === "rainy" ? 1 : weather === "foggy" ? 0.35 : 0
+    };
+  };
+  DeskScene.prototype._cloneEnv = function (t) {
+    const o = {}; for (const k in t) o[k] = t[k].isColor ? t[k].clone() : t[k]; return o;
+  };
+  DeskScene.prototype._initEnv = function () {
+    this.env = { phase: "night", weather: "sunny" };
+    this.env.tgt = this._envTarget("night", "sunny");
+    this.env.cur = this._cloneEnv(this.env.tgt);
+    this.colOn = new T.Color("#ffd9a0"); this.colOff = new T.Color("#5f564b");
+    this.skyFade = null;
+    this._stepEnv(0); this._updateFx(0);
+  };
+  DeskScene.prototype.getEnvironment = function () { return { phase: this.env.phase, weather: this.env.weather }; };
+
+  DeskScene.prototype.setEnvironment = function (phase, weather, opts) {
+    const e = this.env;
+    if (!PH[phase] || !WX[weather] || (e.phase === phase && e.weather === weather)) return;
+    const instant = !!(opts && opts.instant) || this.reduced;
+    e.tgt = this._envTarget(phase, weather);
+    if (instant) e.cur = this._cloneEnv(e.tgt);
+    const tex = skyTexture(phase, weather), s = this.sky;
+    if (this.skyFade) this._finishSkyFade();
+    if (instant) {
+      s.a.material.map.dispose(); s.a.material.map = tex;
+    } else {
+      s.b.material.map.dispose(); s.b.material.map = tex; s.b.material.opacity = 0; s.b.visible = true;
+      this.skyFade = { t: 0, dur: 1.6 };
+    }
+    e.phase = phase; e.weather = weather;
+    if (instant) { this._stepEnv(0); this._updateFx(0); }
+  };
+  DeskScene.prototype._finishSkyFade = function () {
+    const s = this.sky;
+    s.a.material.map.dispose(); s.a.material.map = s.b.material.map;
+    s.b.material.map = canvasTex(4, 4, () => {}); s.b.material.opacity = 0; s.b.visible = false;
+    this.skyFade = null;
+  };
+
+  // eases the lights toward the current target and applies them
+  DeskScene.prototype._stepEnv = function (dt) {
+    const e = this.env; if (!e) return;
+    const k = this.reduced ? 1 : 1 - Math.exp(-dt * 2.4);
+    for (const key in e.tgt) {
+      const a = e.cur[key], b = e.tgt[key];
+      if (a.isColor) a.lerp(b, k); else e.cur[key] = a + (b - a) * k;
+    }
+    const c = e.cur;
+    this.hemi.color.copy(c.hemiSky); this.hemi.groundColor.copy(c.hemiGnd); this.hemi.intensity = c.hemi;
+    this.sunMoon.color.copy(c.dirCol); this.sunMoon.intensity = c.dir;
+    this.bounce.color.copy(c.bounceCol); this.bounce.intensity = c.bounce;
+    this.scene.background.copy(c.bg); this.scene.fog.color.copy(c.bg);
+    this.spot.intensity = 3.4 * c.lamp; this.warmFill.intensity = 0.35 * c.lamp; this.dust.material.opacity = 0.55 * c.lamp;
+    this.bulb.material.color.copy(this.colOff).lerp(this.colOn, Math.min(1, c.lamp));
+  };
+
+  // clouds, fog, rain, snow and the droplets on the glass
+  DeskScene.prototype._updateFx = function (dt) {
+    const c = this.env.cur, L = this.layers, drift = this.reduced ? 0 : dt;
+    if (this.skyFade) {
+      const f = this.skyFade; f.t = Math.min(1, f.t + dt / f.dur);
+      this.sky.b.material.opacity = easeInOut(f.t);
+      if (f.t >= 1) this._finishSkyFade();
+    }
+    const setLayer = (m, op, tint, speed) => {
+      m.visible = op > 0.01; if (!m.visible) return;
+      m.material.opacity = op; m.material.color.copy(tint);
+      m.material.map.offset.x = (m.material.map.offset.x + drift * speed) % 1;
+    };
+    setLayer(L.sparse, c.sparse, c.cloudTint, 0.006);
+    setLayer(L.dense, c.dense, c.cloudTint, 0.011);
+    setLayer(L.fog, c.fog * 0.7, c.fogTint, 0.004);
+    const gl = L.glass; gl.visible = c.glass > 0.01;
+    if (gl.visible) { gl.material.opacity = c.glass * 0.9; gl.material.map.offset.y = (gl.material.map.offset.y + drift * 0.012 * (c.rain > 0.5 ? 1 : 0.15)) % 1; }
+
+    const R = this.rain, rm = this.rainMesh;
+    rm.visible = c.rain > 0.01;
+    if (rm.visible) {
+      rm.material.opacity = 0.55 * c.rain;
+      for (let i = 0; i < R.n; i++) {
+        if (drift) {
+          R.y[i] -= R.v[i] * drift * 0.5; R.x[i] -= R.v[i] * drift * 0.12;
+          if (R.y[i] < -0.44) { R.y[i] = 0.44; R.x[i] = (Math.random() - 0.5) * 1.16; }
+          if (R.x[i] < -0.6) R.x[i] += 1.2;
+        }
+        const j = i * 6;
+        R.pos[j] = R.x[i]; R.pos[j + 1] = R.y[i]; R.pos[j + 2] = 0;
+        R.pos[j + 3] = R.x[i] + R.l[i] * 0.25; R.pos[j + 4] = R.y[i] + R.l[i]; R.pos[j + 5] = 0;
+      }
+      rm.geometry.attributes.position.needsUpdate = true;
+    }
+    const S = this.snow, sm = this.snowMesh;
+    sm.visible = c.snow > 0.01;
+    if (sm.visible) {
+      sm.material.opacity = 0.9 * c.snow;
+      for (let i = 0; i < S.n; i++) {
+        if (drift) { S.y[i] -= S.v[i] * drift; if (S.y[i] < -0.44) { S.y[i] = 0.44; S.x[i] = (Math.random() - 0.5) * 1.16; } }
+        S.pos[i * 3] = S.x[i] + Math.sin(this.clock * 0.9 + S.ph[i]) * 0.02; S.pos[i * 3 + 1] = S.y[i]; S.pos[i * 3 + 2] = 0;
+      }
+      sm.geometry.attributes.position.needsUpdate = true;
+    }
   };
 
   // ---------- public API ----------
@@ -1297,7 +2156,10 @@ window.CONTENT = {
     const aspect = w / h;
     this.camera.aspect = aspect;
     // pull back on narrow (portrait) screens so the laptop stays framed
-    const k = aspect < 1 ? clamp(0.62 / aspect, 1, 1.6) : aspect < 1.3 ? 1.15 : 1;
+    const k = aspect < 1 ? clamp(0.8 / aspect, 1, 1.9) : aspect < 1.3 ? 1.15 : 1;
+    // on a portrait screen keep the books and the hourglass inside the frame
+    this.booksGroup.position.x = aspect < 1 ? -0.44 : -0.52;
+    this.hgGroup.position.x = aspect < 1 ? 0.42 : 0.5;
     this.camera.fov = aspect < 1 ? 56 : 40;
     // on portrait screens aim a little lower so the laptop sits above the intro text
     this.introLook.y = this.DESK_Y + (aspect < 1 ? 0.02 : 0.17);
@@ -1379,7 +2241,6 @@ window.CONTENT = {
 
     // ambient life
     if (!this.reduced) {
-      this._updateHourglass(dt);
       this.plant.rotation.z = Math.sin(t * 0.7) * 0.01;
       const dp = this.dust.geometry.attributes.position;
       for (let i = 0; i < dp.count; i++) {
@@ -1395,6 +2256,11 @@ window.CONTENT = {
         sp.material.opacity = Math.sin(k * Math.PI) * 0.12;
       });
     }
+
+    this._updateHourglass(dt);
+    this._updateProps(dt);
+    this._stepEnv(dt);
+    this._updateFx(dt);
 
     // camera
     if (this.fly) {
@@ -1528,7 +2394,7 @@ window.CONTENT = {
       g.textAlign = "center"; g.textBaseline = "middle";
       [0, 3, 6, 9].forEach(i => { const a = (i / 12) * TAU - Math.PI / 2; g.fillText(ROMAN[i], c + Math.cos(a) * (c - 160), c + Math.sin(a) * (c - 160)); });
       g.fillStyle = rgba(cfg.tint, 1);
-      g.font = `700 ${label.length > 4 ? 120 : 150}px 'Unbounded', 'Instrument Sans', system-ui, sans-serif`;
+      g.font = `700 ${label.length > 4 ? 120 : 150}px 'Unbounded', 'Cairo', 'Instrument Sans', system-ui, sans-serif`;
       g.fillText(label, c, c + 220);
     });
   }
@@ -1682,12 +2548,21 @@ window.CONTENT = {
     if (this.current && !this.warp) { this.current.position.copy(this._restPos()); this.current.scale.setScalar(this._restScale()); }
   };
 
+  // the language changed: redraw the era clocks with the new labels
+  TimeScene.prototype.relabel = function (labels) {
+    this.labels = labels || {};
+    if (this.current && this.current.parent) this.scene.remove(this.current);
+    this.cache = {};
+    if (this.currentKey && !this.warp) this.show(this.currentKey);
+  };
+
   TimeScene.prototype.setPointer = function (x, y) { this.pointer.set(x, y); };
   TimeScene.prototype.setScroll = function (p) { this.scroll = p; };
 
   TimeScene.prototype.show = function (key) {
     if (this.current) this.scene.remove(this.current);
     this.current = this._marker(key);
+    this.currentKey = key;
     this.current.position.copy(this._restPos());
     this.current.scale.setScalar(this._restScale());
     this.scene.add(this.current);
@@ -1714,7 +2589,7 @@ window.CONTENT = {
     }
     this.dir = dir || 1;
     this.warp = { t: 0, dur: 1.6, old, next, oldStart: old.position.clone(), rest, midRes, doneRes, midFired: false };
-    this.current = next;
+    this.current = next; this.currentKey = key;
     return { mid, done };
   };
 
@@ -1835,7 +2710,11 @@ window.CONTENT = {
    reload, and every portfolio page with its interactive features.
    ========================================================================== */
 (function () {
-  const C = window.CONTENT;
+  // the content in the current language (English or Arabic), always up to date
+  const C = new Proxy({}, { get: (_, k) => window.I18N.content()[k] });
+  const t = (s, v) => window.I18N.t(s, v);
+  const isAr = () => window.I18N.lang === "ar";
+  const joinList = a => (a.length < 2 ? a.join("") : a.slice(0, -1).join(isAr() ? "، " : ", ") + (isAr() ? " و" : " and ") + a[a.length - 1]);
   const A = window.ASSETS;
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -1873,6 +2752,7 @@ window.CONTENT = {
     notfound:   { n: null, label: "????" }
   };
   const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const pkey = p => p.key || slug(p.title);
 
   function resolveRoute(input) {
     let s = String(input || "").trim().toLowerCase();
@@ -1921,13 +2801,13 @@ window.CONTENT = {
   }
 
   async function copyText(text) {
-    try { await navigator.clipboard.writeText(text); toast("Copied " + text); return true; }
+    try { await navigator.clipboard.writeText(text); toast(t("Copied {x}", { x: text })); return true; }
     catch (e) {
       const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
       document.body.appendChild(ta); ta.select();
       let ok = false; try { ok = document.execCommand("copy"); } catch (e2) {}
       ta.remove();
-      toast(ok ? "Copied " + text : "Copy blocked here. The address is " + text);
+      toast(ok ? t("Copied {x}", { x: text }) : t("Copy blocked here. The address is {x}", { x: text }));
       return ok;
     }
   }
@@ -1956,10 +2836,10 @@ window.CONTENT = {
       try {
         const bytes = await cvBytes();
         await downloadsNS.save({ filename: A.cvFileName, data: new Blob([bytes], { type: "application/pdf" }) });
-        toast("CV saved");
+        toast(t("CV saved"));
       } catch (e) {
         if (e && e.code === "declined") return;
-        toast("The download didn't start here. Try the link on the published site.");
+        toast(t("The download didn't start here. Try the link on the published site."));
       }
       return;
     }
@@ -1978,7 +2858,7 @@ window.CONTENT = {
 
   async function renderPdf(container) {
     const V = window.VENDOR;
-    container.innerHTML = '<p class="muted">Loading the CV…</p>';
+    container.innerHTML = `<p class="muted">${esc(t("Loading the CV…"))}</p>`;
     try {
       await loadScript(V.pdfWorker); // runs on the main thread: no separate worker file needed
       await loadScript(V.pdf);
@@ -1994,12 +2874,12 @@ window.CONTENT = {
         const cv = document.createElement("canvas");
         cv.width = vp.width; cv.height = vp.height;
         cv.style.width = width + "px"; cv.style.maxWidth = "100%"; cv.style.height = "auto";
-        cv.className = "pdf-page"; cv.setAttribute("aria-label", "CV page " + i);
+        cv.className = "pdf-page"; cv.setAttribute("aria-label", t("CV page {i}", { i }));
         container.appendChild(cv);
         await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
       }
     } catch (e) {
-      container.innerHTML = `<p class="muted">The CV preview couldn't load (${esc(e.message)}). Use Download CV instead.</p>`;
+      container.innerHTML = `<p class="muted">${esc(t("The CV preview couldn't load ({msg}). Use Download CV instead.", { msg: e.message }))}</p>`;
     }
   }
 
@@ -2035,7 +2915,7 @@ window.CONTENT = {
       ${nodes}
       <circle cx="200" cy="200" r="60" class="lg-hub"/>
       <text x="200" y="206" class="lg-num-big">01</text>
-      <text x="200" y="232" class="lg-of">of ${String(n).padStart(2, "0")}</text>
+      <text x="200" y="232" class="lg-of">${esc(t("of {n}", { n: String(n).padStart(2, "0") }))}</text>
     </svg>`;
   }
 
@@ -2056,29 +2936,29 @@ window.CONTENT = {
       const years = new Date().getFullYear() - p.since;
       return `
       <section class="hero">
-        <div class="avatar-wrap"><img class="avatar" src="${A.profile}" alt="Portrait of ${esc(p.name)}" width="180" height="180"><span class="orbit" aria-hidden="true"><i></i></span></div>
+        <div class="avatar-wrap"><img class="avatar" src="${A.profile}" alt="${esc(t("Portrait of {name}", { name: p.name }))}" width="180" height="180"><span class="orbit" aria-hidden="true"><i></i></span></div>
         <h1 class="display">${esc(p.name)}</h1>
         <p class="role">${esc(p.role)}</p>
         <p class="lede">${esc(p.intro)}</p>
         <div class="actions">
-          <a class="btn primary" href="#/projects" data-nav="projects">See my projects</a>
-          <button class="btn" type="button" data-action="download-cv">${icon("download")}Download CV</button>
-          <a class="btn ghost" href="#/contact" data-nav="contact">Get in touch</a>
+          <a class="btn primary" href="#/projects" data-nav="projects">${esc(t("See my projects"))}</a>
+          <button class="btn" type="button" data-action="download-cv">${icon("download")}${esc(t("Download CV"))}</button>
+          <a class="btn ghost" href="#/contact" data-nav="contact">${esc(t("Get in touch"))}</a>
         </div>
         <dl class="facts">
-          <div><dt>In IT since</dt><dd>${p.since} <span class="muted">(${years} years)</span></dd></div>
-          <div><dt>Based in</dt><dd>${esc(p.location)}</dd></div>
-          <div><dt>Degree</dt><dd>BSc Computer Science</dd></div>
+          <div><dt>${esc(t("In IT since"))}</dt><dd>${p.since} <span class="muted">(${esc(t("{n} years", { n: years }))})</span></dd></div>
+          <div><dt>${esc(t("Based in"))}</dt><dd>${esc(p.location)}</dd></div>
+          <div><dt>${esc(t("Degree"))}</dt><dd>${esc(t("BSc Computer Science"))}</dd></div>
         </dl>
       </section>
       <section class="panel">
-        <h2>What I work on</h2>
+        <h2>${esc(t("What I work on"))}</h2>
         <div class="focus">
           ${p.focus.map(f => `<article><h3>${esc(f.title)}</h3><p>${esc(f.text)}</p>${tags(f.tech)}</article>`).join("")}
         </div>
       </section>
       <section class="panel slim">
-        <h2>Currently exploring</h2>
+        <h2>${esc(t("Currently exploring"))}</h2>
         <p>${esc(p.exploring)}</p>
       </section>`;
     },
@@ -2086,10 +2966,10 @@ window.CONTENT = {
     education() {
       const e = C.education;
       return `
-      <header class="page-head"><h1 class="display">Education</h1><p class="lede">A computer science degree, then a steady run of certifications.</p></header>
-      <div class="tabs-inline" role="tablist" aria-label="Education sections">
-        <button role="tab" id="t-degree" aria-controls="p-degree" aria-selected="true">📈 Degree</button>
-        <button role="tab" id="t-certs" aria-controls="p-certs" aria-selected="false" tabindex="-1">🗃 Certificates</button>
+      <header class="page-head"><h1 class="display">${esc(t("Education"))}</h1><p class="lede">${esc(t("A computer science degree, then a steady run of certifications."))}</p></header>
+      <div class="tabs-inline" role="tablist" aria-label="${esc(t("Education sections"))}">
+        <button role="tab" id="t-degree" aria-controls="p-degree" aria-selected="true">📈 ${esc(t("Degree"))}</button>
+        <button role="tab" id="t-certs" aria-controls="p-certs" aria-selected="false" tabindex="-1">🗃 ${esc(t("Certificates"))}</button>
       </div>
       <section class="panel" role="tabpanel" id="p-degree" aria-labelledby="t-degree">
         <p class="kicker">${esc(e.degree.years)}</p>
@@ -2101,8 +2981,8 @@ window.CONTENT = {
         <ol class="cert-list">
           ${e.certificates.map(c => `
             <li>
-              <div><h3>${esc(c.title)}</h3><p class="muted">${esc([c.issuer, c.date].filter(Boolean).join(", "))}</p></div>
-              ${c.id ? `<button class="chip-btn" type="button" data-copy="${esc(c.id)}" aria-label="Copy credential ID ${esc(c.id)}">${icon("copy")}<span>${esc(c.id)}</span></button>` : ""}
+              <div><h3>${esc(c.title)}</h3><p class="muted">${esc([c.issuer, c.date].filter(Boolean).join(isAr() ? "\u060c " : ", "))}</p></div>
+              ${c.id ? `<button class="chip-btn" type="button" data-copy="${esc(c.id)}" aria-label="${esc(t("Copy credential ID {id}", { id: c.id }))}">${icon("copy")}<span dir="ltr">${esc(c.id)}</span></button>` : ""}
             </li>`).join("")}
         </ol>
       </section>`;
@@ -2113,7 +2993,7 @@ window.CONTENT = {
         ${heading ? `<h3>${esc(heading)}</h3>` : ""}
         <ul class="role-projects">${list.map(p => `
           <li>
-            <button type="button" class="proj-link" data-goto-proj="${slug(p.title)}" aria-label="Open project ${esc(p.title)}"><span>${esc(p.title)}</span><small>${esc(projDates(p))}</small></button>
+            <button type="button" class="proj-link" data-goto-proj="${pkey(p)}" aria-label="${esc(t("Open project {name}", { name: p.title }))}"><span>${esc(p.title)}</span><small>${esc(projDates(p))}</small></button>
             <p>${esc(p.desc)}</p>
             ${tags(p.tech.slice(0, 5))}
           </li>`).join("")}
@@ -2121,7 +3001,7 @@ window.CONTENT = {
       const of = id => C.projects.filter(p => p.exp === id);
       const ind = C.independent;
       return `
-      <header class="page-head"><h1 class="display">Experience</h1><p class="lede">From IT support to managing a blockchain team, with the projects behind each role.</p></header>
+      <header class="page-head"><h1 class="display">${esc(t("Experience"))}</h1><p class="lede">${esc(t("From IT support to managing a blockchain team, with the projects behind each role."))}</p></header>
       <ol class="timeline">
         ${C.experience.map(x => `
           <li id="exp-${esc(x.id)}">
@@ -2130,7 +3010,7 @@ window.CONTENT = {
               <h2>${esc(x.role)}</h2>
               <p>${esc(x.text)}</p>
               <ul class="points">${x.points.map(p => `<li>${esc(p)}</li>`).join("")}</ul>
-              ${projList(of(x.id), "Projects in this role")}
+              ${projList(of(x.id), t("Projects in this role"))}
             </div>
           </li>`).join("")}
       </ol>
@@ -2144,42 +3024,42 @@ window.CONTENT = {
 
     projects() {
       const all = [...new Set(C.projects.flatMap(p => p.tech))].sort((a, b) => a.localeCompare(b));
-      const counts = Object.fromEntries(all.map(t => [t, C.projects.filter(p => p.tech.includes(t)).length]));
+      const counts = Object.fromEntries(all.map(x => [x, C.projects.filter(p => p.tech.includes(x)).length]));
       return `
-      <header class="page-head"><h1 class="display">Projects</h1><p class="lede">Filter by technology or search by name.</p></header>
+      <header class="page-head"><h1 class="display">${esc(t("Projects"))}</h1><p class="lede">${esc(t("Filter by technology or search by name. Tap a project to open it."))}</p></header>
       <section class="panel filters">
-        <label class="search">${icon("search")}<span class="sr">Find a project</span><input id="proj-q" type="search" placeholder="Find a project" autocomplete="off"></label>
-        <div class="chips" role="group" aria-label="Filter by technology" id="tech-chips">
-          ${all.map(t => `<button type="button" class="chip${counts[t] < 2 ? " rare" : ""}" data-tech="${esc(t)}" aria-pressed="false">${esc(t)} <span class="n">${counts[t]}</span></button>`).join("")}
-          <button type="button" class="link-btn" id="tech-more" aria-expanded="false">Show all ${all.length} technologies</button>
+        <label class="search">${icon("search")}<span class="sr">${esc(t("Find a project"))}</span><input id="proj-q" type="search" placeholder="${esc(t("Find a project"))}" autocomplete="off"></label>
+        <div class="chips" role="group" aria-label="${esc(t("Filter by technology"))}" id="tech-chips">
+          ${all.map(x => `<button type="button" class="chip${counts[x] < 2 ? " rare" : ""}" data-tech="${esc(x)}" aria-pressed="false">${esc(x)} <span class="n">${counts[x]}</span></button>`).join("")}
+          <button type="button" class="link-btn" id="tech-more" aria-expanded="false">${esc(t("Show all {n} technologies", { n: all.length }))}</button>
         </div>
-        <div class="filter-foot"><p id="proj-count" aria-live="polite"></p><button type="button" class="link-btn" id="proj-clear">Clear filters</button></div>
+        <div class="filter-foot"><p id="proj-count" aria-live="polite"></p><button type="button" class="link-btn" id="proj-clear">${esc(t("Clear filters"))}</button></div>
       </section>
       <div id="proj-grid" class="proj-grid"></div>`;
     },
 
     contact() {
       return `
-      <header class="page-head"><h1 class="display">Contact</h1><p class="lede">Open to projects, collaboration and a good technical conversation.</p></header>
+      <header class="page-head"><h1 class="display">${esc(t("Contact"))}</h1><p class="lede">${esc(t("Open to projects, collaboration and a good technical conversation."))}</p></header>
       <section class="links">
         ${C.links.map(l => `
           <a class="link-row" href="${esc(l.url)}" ${l.url.startsWith("mailto:") ? "" : 'target="_blank" rel="noopener noreferrer"'}>
             <span class="link-ico">${icon(l.id)}</span>
-            <span><strong>${esc(l.label)}</strong><small>${esc(l.sub)}</small></span>
+            <span><strong>${esc(l.label)}</strong><small dir="ltr">${esc(l.sub)}</small></span>
             ${l.url.startsWith("mailto:") ? "" : icon("ext", "ext")}
           </a>`).join("")}
       </section>
       <section class="panel">
-        <h2>Write a message</h2>
-        <p class="muted">This opens your email app with the message ready to send to ${esc(C.profile.email)}.</p>
+        <h2>${esc(t("Write a message"))}</h2>
+        <p class="muted">${esc(t("This opens your email app with the message ready to send to {email}.", { email: C.profile.email }))}</p>
         <div class="form" id="contact-form">
-          <label>Your name<input id="cf-name" autocomplete="name" required></label>
-          <label>Subject<input id="cf-subject" required></label>
-          <label class="full">Message<textarea id="cf-msg" rows="5" required></textarea></label>
+          <label>${esc(t("Your name"))}<input id="cf-name" autocomplete="name" required></label>
+          <label>${esc(t("Subject"))}<input id="cf-subject" required></label>
+          <label class="full">${esc(t("Message"))}<textarea id="cf-msg" rows="5" required></textarea></label>
           <p class="form-error full" id="cf-err" role="alert"></p>
           <div class="actions full">
-            <button class="btn primary" type="button" id="cf-send">${icon("send")}Open in email app</button>
-            <button class="btn ghost" type="button" data-copy="${esc(C.profile.email)}">${icon("copy")}Copy email address</button>
+            <button class="btn primary" type="button" id="cf-send">${icon("send")}${esc(t("Open in email app"))}</button>
+            <button class="btn ghost" type="button" data-copy="${esc(C.profile.email)}">${icon("copy")}${esc(t("Copy email address"))}</button>
           </div>
         </div>
       </section>`;
@@ -2188,36 +3068,37 @@ window.CONTENT = {
     resume() {
       const cats = C.skills.map(s => s.cat);
       return `
-      <header class="page-head"><h1 class="display">Resume</h1>
+      <header class="page-head"><h1 class="display">${esc(t("Resume"))}</h1>
         <div class="actions">
-          <button class="btn primary" type="button" data-action="download-cv">${icon("download")}Download CV</button>
-          <button class="btn" type="button" id="cv-toggle" aria-expanded="false" aria-controls="cv-view">${icon("eye")}View CV</button>
+          <button class="btn primary" type="button" data-action="download-cv">${icon("download")}${esc(t("Download CV"))}</button>
+          <button class="btn" type="button" id="cv-toggle" aria-expanded="false" aria-controls="cv-view">${icon("eye")}${esc(t("View CV"))}</button>
         </div>
+        ${isAr() ? `<p class="muted cv-note">${esc(t("The CV is currently available in English."))}</p>` : ""}
       </header>
       <section id="cv-view" class="panel cv-view" hidden></section>
       <div class="resume-grid">
         <div>
-          <section class="panel"><h2>About me</h2><p>${esc(C.profile.intro)}</p>
-            <ul class="points"><li>Keeps up with new technology, especially in development and programming.</li><li>Interested in data analytics, AI and NLP.</li><li>Web scraping and automation.</li></ul></section>
-          <section class="panel"><h2>Work experience</h2>
+          <section class="panel"><h2>${esc(t("About me"))}</h2><p>${esc(C.profile.intro)}</p>
+            <ul class="points"><li>${esc(t("Keeps up with new technology, especially in development and programming."))}</li><li>${esc(t("Interested in data analytics, AI and NLP."))}</li><li>${esc(t("Web scraping and automation."))}</li></ul></section>
+          <section class="panel"><h2>${esc(t("Work experience"))}</h2>
             <ul class="rows">${C.experience.map(x => `<li><span class="muted">${esc(x.years)}</span><span>${esc(x.role)}</span></li>`).join("")}</ul></section>
-          <section class="panel"><h2>Certificates</h2>
+          <section class="panel"><h2>${esc(t("Certificates"))}</h2>
             <ul class="rows">${C.education.certificates.map(c => `<li><span class="muted">${esc(c.date.split("–").pop().trim())}</span><span>${esc(c.title)}</span></li>`).join("")}</ul></section>
         </div>
         <aside>
-          <section class="panel"><h2>Info</h2>
-            <dl class="info"><div><dt>Email</dt><dd><a href="mailto:${esc(C.profile.email)}">${esc(C.profile.email)}</a></dd></div><div><dt>Location</dt><dd>${esc(C.profile.location)}</dd></div></dl></section>
-          <section class="panel"><h2>Education</h2>
+          <section class="panel"><h2>${esc(t("Info"))}</h2>
+            <dl class="info"><div><dt>${esc(t("Email"))}</dt><dd><a href="mailto:${esc(C.profile.email)}" dir="ltr">${esc(C.profile.email)}</a></dd></div><div><dt>${esc(t("Location"))}</dt><dd>${esc(C.profile.location)}</dd></div></dl></section>
+          <section class="panel"><h2>${esc(t("Education"))}</h2>
             <p><strong>${esc(C.education.degree.school)}</strong><br><span class="muted">${esc(C.education.degree.years)}</span></p>
             <p>${esc(C.education.degree.title)}</p>
             <ul class="points">${C.education.degree.points.map(x => `<li>${esc(x)}</li>`).join("")}</ul></section>
-          <section class="panel"><h2>Languages</h2>
+          <section class="panel"><h2>${esc(t("Languages"))}</h2>
             <dl class="info">${C.languages.map(([l, v]) => `<div><dt>${esc(l)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl></section>
         </aside>
       </div>
       <section class="panel lg" id="leadership">
-        <h2>Technical leadership</h2>
-        <p class="muted">Technical qualifications I bring to project management. Pick a category.</p>
+        <h2>${esc(t("Technical leadership"))}</h2>
+        <p class="muted">${esc(t("Technical qualifications I bring to project management. Pick a category."))}</p>
         <div class="lg-wrap">
           ${leadershipDial(C.leadership)}
           <ol class="lg-list">
@@ -2227,11 +3108,11 @@ window.CONTENT = {
                   <span class="lg-num">${String(i + 1).padStart(2, "0")}</span>
                   <span class="lg-ico">${icon(c.icon)}</span>
                   <span class="lg-name">${esc(c.cat)}</span>
-                  <span class="lg-count" aria-label="${c.items.length} qualifications">${c.items.length}</span>
+                  <span class="lg-count" aria-label="${esc(t("{n} qualifications", { n: c.items.length }))}">${c.items.length}</span>
                 </button>
                 <div class="lg-body" id="lg-p-${i}" role="region" aria-labelledby="lg-b-${i}">
                   <ul class="lg-items">${c.items.map(it => `
-                    <li><span class="lg-line"><strong>${esc(it.name)}</strong>${it.status ? `<span class="lg-status">${esc(it.status)}</span>` : ""}</span>${it.tags ? `<span class="lg-tags">${it.tags.map(t => `<span>${esc(t)}</span>`).join("")}</span>` : ""}</li>`).join("")}
+                    <li><span class="lg-line"><strong>${esc(it.name)}</strong>${it.status ? `<span class="lg-status">${esc(it.status)}</span>` : ""}</span>${it.tags ? `<span class="lg-tags">${it.tags.map(x => `<span>${esc(x)}</span>`).join("")}</span>` : ""}</li>`).join("")}
                   </ul>
                 </div>
               </li>`).join("")}
@@ -2239,21 +3120,21 @@ window.CONTENT = {
         </div>
       </section>
       <section class="panel">
-        <div class="skills-head"><h2>Skills</h2>
-          <div class="chips" role="group" aria-label="Filter skills by category">
-            <button type="button" class="chip" data-cat="all" aria-pressed="true">All</button>
+        <div class="skills-head"><h2>${esc(t("Skills"))}</h2>
+          <div class="chips" role="group" aria-label="${esc(t("Filter skills by category"))}">
+            <button type="button" class="chip" data-cat="all" aria-pressed="true">${esc(t("All"))}</button>
             ${cats.map(c => `<button type="button" class="chip" data-cat="${esc(c)}" aria-pressed="false">${esc(c)}</button>`).join("")}
           </div>
         </div>
         <div id="skills-chart" class="skills-chart"></div>
-        <ul class="legend" aria-label="Level legend"><li><i class="l5"></i>85% and above</li><li><i class="l4"></i>75–84%</li><li><i class="l3"></i>65–74%</li><li><i class="l2"></i>below 65%</li></ul>
+        <ul class="legend" aria-label="${esc(t("Level legend"))}"><li><i class="l5"></i>${esc(t("85% and above"))}</li><li><i class="l4"></i>${esc(t("75–84%"))}</li><li><i class="l3"></i>${esc(t("65–74%"))}</li><li><i class="l2"></i>${esc(t("below 65%"))}</li></ul>
         <div id="skill-tip" class="skill-tip" role="status" aria-live="polite"></div>
       </section>`;
     },
 
     blog() {
       return `
-      <header class="page-head"><h1 class="display">Blog</h1><p class="lede">Notes from learning in public.</p></header>
+      <header class="page-head"><h1 class="display">${esc(t("Blog"))}</h1><p class="lede">${esc(t("Notes from learning in public."))}</p></header>
       ${C.blogs.map(b => `
         <article class="panel post">
           <img src="${A[b.img] || b.img}" alt="" loading="lazy">
@@ -2261,16 +3142,16 @@ window.CONTENT = {
             <p class="kicker">${esc(b.date)}</p>
             <h2>${esc(b.title)}</h2>
             <p>${esc(b.excerpt)}</p>
-            <a class="btn" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">Read on Medium ${icon("ext")}</a>
+            <a class="btn" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(t("Read on Medium"))} ${icon("ext")}</a>
           </div>
         </article>`).join("")}`;
     },
 
     notfound(path) {
       return `
-      <header class="page-head"><h1 class="display">Lost in time</h1>
-        <p class="lede">${esc(SCHEME + path)} isn't a page on this site. Pick a destination:</p></header>
-      <section class="panel"><ul class="dest">${ROUTES.map(r => `<li><a href="#/${r.key}" data-nav="${r.key}">${r.icon} ${r.title}</a></li>`).join("")}</ul></section>`;
+      <header class="page-head"><h1 class="display">${esc(t("Lost in time"))}</h1>
+        <p class="lede">${esc(t("{path} isn't a page on this site. Pick a destination:", { path: SCHEME + path }))}</p></header>
+      <section class="panel"><ul class="dest">${ROUTES.map(r => `<li><a href="#/${r.key}" data-nav="${r.key}">${r.icon} ${esc(t(r.title))}</a></li>`).join("")}</ul></section>`;
     }
   };
 
@@ -2302,50 +3183,104 @@ window.CONTENT = {
       const count = root.querySelector("#proj-count");
       const q = root.querySelector("#proj-q");
       const chips = [...root.querySelectorAll(".chip[data-tech]")];
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const countText = n => !isAr() ? `${n} ${n === 1 ? "project" : "projects"}` : n === 1 ? "\u0645\u0634\u0631\u0648\u0639 \u0648\u0627\u062d\u062f" : n === 2 ? "\u0645\u0634\u0631\u0648\u0639\u0627\u0646" : n <= 10 ? `${n} \u0645\u0634\u0627\u0631\u064a\u0639` : `${n} \u0645\u0634\u0631\u0648\u0639\u064b\u0627`;
+
       const draw = () => {
         const list = C.projects.filter(p =>
-          (!state.tech.size || [...state.tech].every(t => p.tech.includes(t))) &&
+          (!state.tech.size || [...state.tech].every(x => p.tech.includes(x))) &&
           (!state.q || (p.title + " " + p.desc + " " + p.tech.join(" ")).toLowerCase().includes(state.q))
         );
-        count.textContent = `${list.length} ${list.length === 1 ? "project" : "projects"}`;
+        count.textContent = countText(list.length);
         chips.forEach(c => { const on = state.tech.has(c.dataset.tech); c.setAttribute("aria-pressed", on); c.classList.toggle("keep", on); });
         if (!list.length) {
-          grid.innerHTML = `<div class="panel empty"><p>No projects match these filters.</p><button type="button" class="btn" data-clear>Clear filters</button></div>`;
+          grid.innerHTML = `<div class="panel empty"><p>${esc(t("No projects match these filters."))}</p><button type="button" class="btn" data-clear>${esc(t("Clear filters"))}</button></div>`;
           return;
         }
         grid.innerHTML = list.map(p => {
-          const dates = [p.start, p.end].filter(Boolean);
-          const initials = p.title.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).map(w => w[0]).join("").slice(0, 3).toUpperCase();
+          const key = pkey(p), parts = key.split("-");
+          const initials = (parts.length > 1 ? parts.map(w => w[0]).join("") : key.slice(0, 3)).slice(0, 3).toUpperCase();
+          const meta = [projDates(p), p.role].filter(Boolean);
           return `
-          <article class="proj" id="proj-${slug(p.title)}">
-            <div class="cover" style="--h:${p.hue}" aria-hidden="true"><span>${esc(initials)}</span></div>
-            <div class="proj-body">
-              <h2>${esc(p.title)}</h2>
-              ${dates.length || p.role ? `<p class="meta">${dates.length ? `<span>${esc(dates[0] === dates[1] ? dates[0] : dates.join(" – "))}</span>` : ""}${p.role ? `<span>${esc(p.role)}</span>` : ""}</p>` : ""}
-              ${roleBadge(p)}
-              ${p.desc ? `<h3>Description</h3><p>${esc(p.desc)}</p>` : ""}
-              ${p.tasks && p.tasks.length ? `<h3>Tasks</h3><ul class="points">${p.tasks.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}
-              <div class="tag-row">${p.tech.map(t => `<button type="button" class="tag${state.tech.has(t) ? " on" : ""}" data-tech-add="${esc(t)}" aria-label="Filter by ${esc(t)}">${esc(t)}</button>`).join("")}</div>
-            </div>
+          <article class="proj book" id="proj-${key}">
+            <div class="book-tilt"><div class="book-body">
+              <div class="pg pg-inside" id="pg-${key}" inert aria-hidden="true">
+                <div class="pg-scroll">
+                  <h2>${esc(p.title)}</h2>
+                  ${meta.length ? `<p class="meta">${meta.map(m => `<span>${esc(m)}</span>`).join("")}</p>` : ""}
+                  ${roleBadge(p)}
+                  ${p.desc ? `<h3>${esc(t("Description"))}</h3><p>${esc(p.desc)}</p>` : ""}
+                  ${p.tasks && p.tasks.length ? `<h3>${esc(t("Tasks"))}</h3><ul class="points">${p.tasks.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+                  <div class="tag-row">${p.tech.map(x => `<button type="button" class="tag${state.tech.has(x) ? " on" : ""}" data-tech-add="${esc(x)}" aria-label="${esc(t("Filter by {name}", { name: x }))}">${esc(x)}</button>`).join("")}</div>
+                </div>
+                <button type="button" class="pg-close" aria-label="${esc(t("Close"))}">${icon("close")}</button>
+              </div>
+              <button type="button" class="pg pg-cover" aria-expanded="false" aria-controls="pg-${key}" aria-label="${esc(t("Open project {name}", { name: p.title }))}">
+                <span class="cover" style="--h:${p.hue}" aria-hidden="true"><span>${esc(initials)}</span></span>
+                <span class="cover-info">
+                  <span class="cv-title">${esc(p.title)}</span>
+                  ${meta.length ? `<span class="cv-meta">${esc(meta.join(" \u00b7 "))}</span>` : ""}
+                  <span class="cv-tags" aria-hidden="true">${p.tech.slice(0, 3).map(x => `<i>${esc(x)}</i>`).join("")}</span>
+                  <span class="cv-open" aria-hidden="true">${esc(t("Open"))} <b>\u203a</b></span>
+                </span>
+              </button>
+            </div></div>
           </article>`;
         }).join("");
       };
+
+      // a project is a book: the cover swings open onto the details
+      const setBook = (book, open, focus) => {
+        const cover = book.querySelector(".pg-cover"), inside = book.querySelector(".pg-inside");
+        book.classList.toggle("open", open);
+        cover.setAttribute("aria-expanded", open);
+        if (open) { inside.removeAttribute("inert"); inside.setAttribute("aria-hidden", "false"); cover.setAttribute("inert", ""); }
+        else { inside.setAttribute("inert", ""); inside.setAttribute("aria-hidden", "true"); cover.removeAttribute("inert"); }
+        if (focus) (open ? inside.querySelector(".pg-close") : cover).focus({ preventScroll: true });
+      };
+
       const more = root.querySelector("#tech-more"), chipBox = root.querySelector("#tech-chips");
       more.addEventListener("click", () => {
         const open = !chipBox.classList.contains("show-all");
         chipBox.classList.toggle("show-all", open);
         more.setAttribute("aria-expanded", open);
-        more.textContent = open ? "Show fewer" : `Show all ${chips.length} technologies`;
+        more.textContent = open ? t("Show fewer") : t("Show all {n} technologies", { n: chips.length });
       });
       q.addEventListener("input", () => { state.q = q.value.trim().toLowerCase(); draw(); });
-      chips.forEach(c => c.addEventListener("click", () => { const t = c.dataset.tech; state.tech.has(t) ? state.tech.delete(t) : state.tech.add(t); draw(); }));
+      chips.forEach(c => c.addEventListener("click", () => { const x = c.dataset.tech; state.tech.has(x) ? state.tech.delete(x) : state.tech.add(x); draw(); }));
       const clear = () => { state.q = ""; q.value = ""; state.tech.clear(); draw(); };
       root.querySelector("#proj-clear").addEventListener("click", clear);
       grid.addEventListener("click", e => {
+        const cover = e.target.closest(".pg-cover");
+        if (cover) { setBook(cover.closest(".book"), true, true); return; }
+        const close = e.target.closest(".pg-close");
+        if (close) { setBook(close.closest(".book"), false, true); return; }
         const b = e.target.closest("[data-tech-add]");
-        if (b) { const t = b.dataset.techAdd; state.tech.has(t) ? state.tech.delete(t) : state.tech.add(t); draw(); root.querySelector(".filters").scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+        if (b) { const x = b.dataset.techAdd; state.tech.has(x) ? state.tech.delete(x) : state.tech.add(x); draw(); root.querySelector(".filters").scrollIntoView({ behavior: "smooth", block: "nearest" }); }
         if (e.target.closest("[data-clear]")) clear();
       });
+      const onKey = e => {
+        if (!grid.isConnected) { document.removeEventListener("keydown", onKey); return; }
+        if (e.key !== "Escape") return;
+        grid.querySelectorAll(".book.open").forEach(book => setBook(book, false, book.contains(document.activeElement)));
+      };
+      document.addEventListener("keydown", onKey);
+
+      // the cards lean towards the pointer, with a soft glare (mouse only)
+      if (!reduced && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+        const rest = book => { book.style.setProperty("--rx", "0deg"); book.style.setProperty("--ry", "0deg"); book.style.setProperty("--glow", "0"); };
+        grid.addEventListener("pointermove", e => {
+          const book = e.target.closest(".book");
+          if (!book || book.classList.contains("open")) return;
+          const r = book.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+          book.style.setProperty("--ry", ((px - 0.5) * 10).toFixed(2) + "deg");
+          book.style.setProperty("--rx", ((0.5 - py) * 8).toFixed(2) + "deg");
+          book.style.setProperty("--mx", (px * 100).toFixed(1) + "%");
+          book.style.setProperty("--my", (py * 100).toFixed(1) + "%");
+          book.style.setProperty("--glow", "1");
+        });
+        grid.addEventListener("pointerout", e => { const book = e.target.closest(".book"); if (book && !book.contains(e.relatedTarget)) rest(book); });
+      }
       draw();
     },
 
@@ -2353,12 +3288,12 @@ window.CONTENT = {
       const $ = id => root.querySelector("#" + id);
       $("cf-send").addEventListener("click", () => {
         const name = $("cf-name").value.trim(), subject = $("cf-subject").value.trim(), msg = $("cf-msg").value.trim();
-        const missing = [!name && "your name", !subject && "a subject", !msg && "a message"].filter(Boolean);
-        if (missing.length) { $("cf-err").textContent = "Add " + missing.join(", ").replace(/, ([^,]*)$/, " and $1") + " first."; return; }
+        const missing = [!name && t("your name"), !subject && t("a subject"), !msg && t("a message")].filter(Boolean);
+        if (missing.length) { $("cf-err").textContent = t("Add {list} first.", { list: joinList(missing) }); return; }
         $("cf-err").textContent = "";
         const body = `${msg}\n\n— ${name}`;
         window.location.href = `mailto:${C.profile.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        toast("Opening your email app");
+        toast(t("Opening your email app"));
       });
     },
 
@@ -2428,7 +3363,7 @@ window.CONTENT = {
       };
       const show = el => {
         if (!el) { tip.classList.remove("show"); return; }
-        tip.innerHTML = `<strong>Skill:</strong> ${esc(el.dataset.skill)}<br><strong>Experience:</strong> ${el.dataset.v}%`;
+        tip.innerHTML = `<strong>${esc(t("Skill:"))}</strong> ${esc(el.dataset.skill)}<br><strong>${esc(t("Experience:"))}</strong> ${el.dataset.v}%`;
         const r = el.getBoundingClientRect(), pr = chart.parentElement.getBoundingClientRect();
         tip.style.left = Math.min(r.left - pr.left + 20, pr.width - 200) + "px";
         tip.style.top = r.top - pr.top - 56 + "px";
@@ -2449,7 +3384,7 @@ window.CONTENT = {
       tg.addEventListener("click", () => {
         const open = view.hidden;
         view.hidden = !open; tg.setAttribute("aria-expanded", open);
-        tg.lastChild.textContent = open ? "Hide CV" : "View CV";
+        tg.lastChild.textContent = t(open ? "Hide CV" : "View CV");
         if (open && !view.dataset.loaded) { view.dataset.loaded = "1"; renderPdf(view); }
         if (open) view.scrollIntoView({ behavior: "smooth", block: "start" });
       });
@@ -2473,23 +3408,24 @@ window.CONTENT = {
       <header class="chrome">
         <div class="tabbar">
           <div class="lights">
-            <button type="button" class="light red" data-desk aria-label="Close the browser and return to the desk"></button>
+            <button type="button" class="light red" data-desk data-i18n-label="Close the browser and return to the desk" aria-label="${esc(t("Close the browser and return to the desk"))}"></button>
             <span class="light yellow" aria-hidden="true"></span><span class="light green" aria-hidden="true"></span>
           </div>
-          <nav class="tabs" role="tablist" aria-label="Portfolio pages">
-            ${ROUTES.map(r => `<a class="tab" role="tab" href="#/${r.key}" data-nav="${r.key}" id="tab-${r.key}" aria-selected="false" aria-controls="viewport"><span class="fav" aria-hidden="true">${r.icon}</span><span class="tab-title">${r.title}</span></a>`).join("")}
+          <nav class="tabs" role="tablist" data-i18n-label="Portfolio pages" aria-label="${esc(t("Portfolio pages"))}">
+            ${ROUTES.map(r => `<a class="tab" role="tab" href="#/${r.key}" data-nav="${r.key}" id="tab-${r.key}" aria-selected="false" aria-controls="viewport"><span class="fav" aria-hidden="true">${r.icon}</span><span class="tab-title" data-i18n="${r.title}">${esc(t(r.title))}</span></a>`).join("")}
           </nav>
         </div>
         <div class="toolbar">
-          <button type="button" class="tool" id="nav-back" aria-label="Back">${icon("back")}</button>
-          <button type="button" class="tool" id="nav-fwd" aria-label="Forward">${icon("fwd")}</button>
-          <button type="button" class="tool" id="nav-reload" aria-label="Reload page">${icon("reload")}</button>
+          <button type="button" class="tool" id="nav-back" data-i18n-label="Back" aria-label="${esc(t("Back"))}">${icon("back")}</button>
+          <button type="button" class="tool" id="nav-fwd" data-i18n-label="Forward" aria-label="${esc(t("Forward"))}">${icon("fwd")}</button>
+          <button type="button" class="tool" id="nav-reload" data-i18n-label="Reload page" aria-label="${esc(t("Reload page"))}">${icon("reload")}</button>
           <form class="address" id="address" role="search">
             ${icon("lock", "lock")}
-            <label class="sr" for="addr">Address</label>
-            <input id="addr" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" enterkeyhint="go">
+            <label class="sr" for="addr" data-i18n="Address">${esc(t("Address"))}</label>
+            <input id="addr" type="text" dir="ltr" spellcheck="false" autocomplete="off" autocapitalize="off" enterkeyhint="go">
           </form>
-          <button type="button" class="tool desk-btn" data-desk aria-label="Back to the desk">${icon("desk")}<span>Desk</span></button>
+          <button type="button" class="tool lang-btn" id="lang-btn" data-i18n-label="Switch language" aria-label="${esc(t("Switch language"))}"><span data-lang-label>${esc(window.I18N.langLabel())}</span></button>
+          <button type="button" class="tool desk-btn" data-desk data-i18n-label="Back to the desk" aria-label="${esc(t("Back to the desk"))}">${icon("desk")}<span data-i18n="Desk">${esc(t("Desk"))}</span></button>
         </div>
         <div class="progress" aria-hidden="true"></div>
       </header>
@@ -2509,6 +3445,7 @@ window.CONTENT = {
       if (ge) { e.preventDefault(); this.go("experience", { focus: "exp-" + ge.dataset.gotoExp }); return; }
       const gp = e.target.closest("[data-goto-proj]");
       if (gp) { e.preventDefault(); this.go("projects", { focus: "proj-" + gp.dataset.gotoProj }); return; }
+      if (e.target.closest("#lang-btn")) { window.I18N.set(isAr() ? "en" : "ar"); return; }
       if (e.target.closest("[data-desk]")) { e.preventDefault(); this.hooks.onDesk(); return; }
       const cp = e.target.closest("[data-copy]");
       if (cp) { copyText(cp.dataset.copy); return; }
@@ -2561,7 +3498,7 @@ window.CONTENT = {
     this.root.querySelector("#nav-back").disabled = this.idx <= 0;
     this.root.querySelector("#nav-fwd").disabled = this.idx >= this.stack.length - 1;
     const r = ROUTES.find(r => r.key === key);
-    document.title = (r ? r.title : "Not found") + " — " + C.profile.name;
+    document.title = (r ? t(r.title) : t("Not found")) + " — " + C.profile.name;
     try { history.replaceState(null, "", "#/" + (key === "notfound" ? this.current.path : key)); } catch (e) {}
   };
 
@@ -2601,15 +3538,16 @@ window.CONTENT = {
       await w.done;
       this.root.classList.remove("warping");
     }
-    if (entry.focus) setTimeout(() => this._applyFocus(entry.focus), instant ? 120 : 60);
+    if (entry.focus || entry.action) setTimeout(() => { if (entry.focus) this._applyFocus(entry.focus); if (entry.action === "open-cv") this._openCv(); }, instant ? 180 : 90);
     this.busy = false;
     if (this.queued) { const q = this.queued; this.queued = null; this._transition(q[0], q[1]); }
   };
 
   Browser.prototype.go = function (key, opts = {}) {
-    const entry = { key, path: opts.path, focus: opts.focus };
+    const entry = { key, path: opts.path, focus: opts.focus, action: opts.action };
     if (this.current && this.current.key === key && key !== "notfound" && !opts.force) {
-      if (opts.focus) this._applyFocus(opts.focus); else this.viewport.scrollTo({ top: 0, behavior: "smooth" });
+      if (opts.focus || opts.action) { if (opts.focus) this._applyFocus(opts.focus); if (opts.action === "open-cv") this._openCv(); }
+      else this.viewport.scrollTo({ top: 0, behavior: "smooth" });
       this._syncChrome();
       return;
     }
@@ -2636,8 +3574,8 @@ window.CONTENT = {
   Browser.prototype._chrono = function (from, to, dir) {
     if (from === to || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const el = this.chrono, yr = el.querySelector(".chrono-year"), msg = el.querySelector(".chrono-dir");
-    const a = ERA[from] && ERA[from].n, b = (ERA[to] || ERA.notfound).n, label = (ERA[to] || ERA.notfound).label;
-    msg.textContent = dir < 0 ? "Travelling back" : "Travelling ahead";
+    const a = ERA[from] && ERA[from].n, b = (ERA[to] || ERA.notfound).n, label = t((ERA[to] || ERA.notfound).label);
+    msg.textContent = t(dir < 0 ? "Travelling back" : "Travelling ahead");
     clearTimeout(this._chronoT);
     el.classList.remove("settle"); el.classList.add("on");
     const dur = 720, t0 = performance.now();
@@ -2660,6 +3598,21 @@ window.CONTENT = {
     const t = el.querySelector(".panel") || el;
     t.classList.remove("flash"); void t.offsetWidth; t.classList.add("flash");
     setTimeout(() => t.classList.remove("flash"), 1800);
+    // a project opens its book
+    if (el.classList.contains("book") && !el.classList.contains("open")) { const c = el.querySelector(".pg-cover"); if (c) c.click(); }
+  };
+
+  // open the CV viewer on the Resume page
+  Browser.prototype._openCv = function () {
+    const tg = this.page.querySelector("#cv-toggle");
+    if (tg && tg.getAttribute("aria-expanded") !== "true") tg.click();
+  };
+
+  // the language changed: refresh the tabs, the toolbar and the page being shown
+  Browser.prototype.relang = function () {
+    const sc = this.viewport.scrollTop;
+    window.I18N.applyStatic();
+    if (this.current) { this._render(this.current); this.viewport.scrollTop = sc; this._syncChrome(); }
   };
 
   Browser.resolveRoute = resolveRoute;
@@ -2671,11 +3624,361 @@ window.CONTENT = {
 </script>
   <script>
 /* ==========================================================================
+   Phone tilt: the desk shifts a little as the phone is tilted.
+   Android turns it on by itself. iPhones need a tap (Motion > Tilt in the Scene
+   panel) because iOS asks for permission first.
+   ========================================================================== */
+(function () {
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const hasEvent = "DeviceOrientationEvent" in window;
+  const needsPermission = hasEvent && typeof window.DeviceOrientationEvent.requestPermission === "function";
+
+  let on = false, sink = null, sawData = false;
+
+  function handler(e) {
+    if (e.gamma == null || e.beta == null || !sink) return;
+    sawData = true;
+    const angle = (screen.orientation && screen.orientation.angle) || 0;
+    let x = e.gamma, y = e.beta - 50;                 // holding a phone upright is about 50 degrees
+    if (angle === 90) { x = e.beta - 50; y = -e.gamma; }
+    else if (angle === 270 || angle === -90) { x = -(e.beta - 50); y = e.gamma; }
+    sink(clamp(x / 22, -1, 1), clamp(y / 22, -1, 1));
+  }
+
+  async function enable() {
+    if (on || !hasEvent) return on;
+    if (needsPermission) {
+      try { if ((await window.DeviceOrientationEvent.requestPermission()) !== "granted") return false; }
+      catch (e) { return false; }
+    }
+    window.addEventListener("deviceorientation", handler, true);
+    on = true;
+    return true;
+  }
+
+  function disable() {
+    if (!on) return;
+    window.removeEventListener("deviceorientation", handler, true);
+    on = false;
+    if (sink) sink(0, 0);
+  }
+
+  window.Tilt = {
+    supported: coarse && hasEvent && !reduced,
+    needsPermission,
+    setSink(fn) { sink = fn; },
+    enable, disable,
+    get on() { return on; },
+    get sawData() { return sawData; }
+  };
+})();
+
+</script>
+  <script>
+/* ==========================================================================
+   Scene environment: the time of day and the weather for the desk.
+
+   Time of day : the visitor's own clock (dawn, day, dusk, night), or a manual pick.
+   Weather     : "Live" looks up the real weather with Open-Meteo (free, no key).
+                 1. If the visitor already allowed location for this site, that is used.
+                 2. Otherwise the main city of the visitor's time zone is used
+                    (Asia/Beirut -> Beirut), so no permission is needed.
+                 "My location" asks the browser for permission and uses the exact spot.
+                 Coordinates are never stored. If a lookup fails the sky is clear,
+                 and the panel says why. Weather data by Open-Meteo.com (CC BY 4.0).
+   The line under the intro buttons shows what was detected.
+   ========================================================================== */
+(function () {
+  const t = (s, v) => window.I18N.t(s, v);
+  const PHASES = ["dawn", "day", "dusk", "night"];
+  const WEATHERS = ["sunny", "cloudy", "rainy", "foggy", "snowy"];
+  const LS_SCENE = "devleb.scene.v1", LS_WEATHER = "devleb.weather.v2";
+  const CACHE_MS = 30 * 60 * 1000;
+
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const fail = (code, extra) => Object.assign(new Error(code), { code, extra });
+
+  // ---------- time of day ----------
+  const minutes = d => d.getHours() * 60 + d.getMinutes();
+  const hm = str => { const m = /T(\d\d):(\d\d)/.exec(str || ""); return m ? +m[1] * 60 + +m[2] : null; };
+
+  // sun = { rise, set } in minutes after midnight; defaults are 06:30 and 18:30
+  function phaseFor(date, sun) {
+    const rise = sun && sun.rise != null ? sun.rise : 390, set = sun && sun.set != null ? sun.set : 1110;
+    const m = minutes(date);
+    if (m >= rise - 60 && m < rise + 60) return "dawn";
+    if (m >= rise + 60 && m < set - 90) return "day";
+    if (m >= set - 90 && m < set + 60) return "dusk";
+    return "night";
+  }
+  const timeText = () => new Date().toLocaleTimeString(window.I18N.lang === "ar" ? "ar-u-nu-latn" : [], { hour: "numeric", minute: "2-digit" });
+
+  // ---------- weather ----------
+  // WMO weather codes used by Open-Meteo
+  function weatherFromCode(c) {
+    if (c === 0 || c === 1) return "sunny";
+    if (c === 2 || c === 3) return "cloudy";
+    if (c === 45 || c === 48) return "foggy";
+    if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82) || c >= 95) return "rainy";
+    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return "snowy";
+    return "cloudy";
+  }
+  const wxLabel = (w, phase) => t(w === "sunny" && phase === "night" ? "Clear" : cap(w));
+  const condWord = (w, phase) => t({ sunny: phase === "night" ? "clear" : "sunny", cloudy: "cloudy", rainy: "raining", foggy: "foggy", snowy: "snowing" }[w]);
+
+  async function getJson(url, ms) {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms || 7000);
+    try {
+      const r = await fetch(url, { signal: ctl.signal });
+      if (!r.ok) throw fail("network");
+      return await r.json();
+    } catch (e) { throw e && e.code ? e : fail("network"); }
+    finally { clearTimeout(timer); }
+  }
+
+  const getPosition = () => new Promise((res, rej) => {
+    if (!navigator.geolocation) return rej(fail("nogeo"));
+    navigator.geolocation.getCurrentPosition(
+      p => res({ lat: +p.coords.latitude.toFixed(2), lon: +p.coords.longitude.toFixed(2) }),   // rounded: about 1 km
+      () => rej(fail("declined")), { timeout: 8000, maximumAge: 3600000 });
+  });
+  async function silentPosition() {            // only if the visitor has already allowed it
+    try {
+      if (!navigator.geolocation || !navigator.permissions) return null;
+      const p = await navigator.permissions.query({ name: "geolocation" });
+      return p.state === "granted" ? await getPosition() : null;
+    } catch (e) { return null; }
+  }
+
+  async function forecast(lat, lon) {
+    const w = await getJson("https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+      "&current=weather_code,temperature_2m&daily=sunrise,sunset&timezone=auto&forecast_days=1");
+    if (!w || !w.current) throw fail("weather");
+    return {
+      weather: weatherFromCode(w.current.weather_code), temp: w.current.temperature_2m,
+      sun: { rise: hm(w.daily && w.daily.sunrise && w.daily.sunrise[0]), set: hm(w.daily && w.daily.sunset && w.daily.sunset[0]) }
+    };
+  }
+
+  async function fromTimeZone() {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    const city = tz.split("/").pop().replace(/_/g, " ");
+    if (!tz.includes("/") || /^etc\//i.test(tz) || !city) throw fail("timezone", tz);
+    const g = await getJson("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(city) + "&count=10&language=en&format=json");
+    const list = (g && g.results) || [];
+    const loc = list.find(r => r.timezone === tz) || list[0];      // prefer the city that really is in this time zone
+    if (!loc) throw fail("weather");
+    const res = await forecast(loc.latitude, loc.longitude);
+    return Object.assign(res, { city: loc.name, basis: "timezone" });
+  }
+
+  // opts.ask = true: ask for permission ("My location")
+  async function liveWeather(opts) {
+    const ask = !!(opts && opts.ask);
+    if (!ask) {
+      const c = store.get(LS_WEATHER);
+      if (c && c.res && Date.now() - c.t < CACHE_MS) return c.res;
+    }
+    let pos = null, declined = false;
+    if (ask) { try { pos = await getPosition(); } catch (e) { declined = true; } }
+    else pos = await silentPosition();
+    let res;
+    if (pos) res = Object.assign(await forecast(pos.lat, pos.lon), { city: "", basis: "device" });
+    else res = await fromTimeZone();
+    res.declined = declined;
+    store.set(LS_WEATHER, { t: Date.now(), res });
+    return res;
+  }
+
+  // ---------- controls ----------
+  const IC = {
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+    cloud: '<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/>',
+    rain: '<path d="M7 15a4 4 0 0 1-.5-7.96A5.5 5.5 0 0 1 17 8.5 3.5 3.5 0 0 1 16.5 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+    snow: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/>',
+    fog: '<path d="M4 8h16M6 12h12M4 16h16M8 20h8"/>'
+  };
+  const ico = n => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
+
+  function init(desk) {
+    if (!desk || document.getElementById("scene-ctl")) return;
+    const saved = store.get(LS_SCENE) || {};
+    const st = {
+      time: PHASES.includes(saved.time) ? saved.time : "auto",
+      weather: WEATHERS.includes(saved.weather) ? saved.weather : "live",
+      precise: !!saved.precise,
+      tilt: saved.tilt,
+      live: null, liveState: "idle", reason: "", tz: ""              // liveState: idle | loading | ok | failed
+    };
+    const save = () => store.set(LS_SCENE, { time: st.time, weather: st.weather, precise: st.precise, tilt: st.tilt });
+
+    // the detected-conditions line in the intro card
+    const card = document.querySelector(".intro-card");
+    let line = document.getElementById("env-line");
+    if (card && !line) { line = document.createElement("p"); line.className = "env-line"; line.id = "env-line"; line.setAttribute("aria-live", "polite"); card.appendChild(line); }
+
+    const ctl = document.createElement("div");
+    ctl.className = "scene-ctl"; ctl.id = "scene-ctl";
+    document.body.appendChild(ctl);
+
+    const chip = (attr, val, label) => `<button type="button" class="chip" data-${attr}="${val}" aria-pressed="false">${esc(label)}</button>`;
+    const buildPop = () => `
+      <p class="sp-h">${esc(t("Time of day"))}</p>
+      <div class="sp-row" role="group" aria-label="${esc(t("Time of day"))}">
+        ${chip("time", "auto", t("Auto"))}${PHASES.map(p => chip("time", p, t(cap(p)))).join("")}
+      </div>
+      <p class="sp-h">${esc(t("Weather"))}</p>
+      <div class="sp-row" role="group" aria-label="${esc(t("Weather"))}">
+        ${chip("wx", "live", t("Live"))}${chip("wx", "here", t("My location"))}${WEATHERS.map(w => chip("wx", w, t(cap(w)))).join("")}
+      </div>
+      ${window.Tilt && window.Tilt.supported ? `
+      <p class="sp-h">${esc(t("Motion"))}</p>
+      <div class="sp-row" role="group" aria-label="${esc(t("Motion"))}">${chip("tilt", "on", t("Tilt"))}</div>` : ""}
+      <p class="sp-note" id="sp-note" aria-live="polite"></p>`;
+
+    const buildCtl = () => {
+      const old = ctl.querySelector("#scene-pop");
+      const open = !!old && !old.hidden;
+      ctl.innerHTML = `
+        <button type="button" class="scene-btn" id="lang-btn2" aria-label="${esc(t("Switch language"))}"><span class="lbl">${esc(window.I18N.langLabel())}</span></button>
+        <button type="button" class="scene-btn" id="scene-btn" aria-expanded="${open}" aria-controls="scene-pop" aria-haspopup="dialog">${ico("sun")}<span class="lbl"></span></button>
+        <div class="scene-pop" id="scene-pop" role="dialog" aria-label="${esc(t("Time of day and weather"))}"${open ? "" : " hidden"}>${buildPop()}</div>`;
+    };
+    buildCtl();
+
+    const $ = s => ctl.querySelector(s);
+
+    const effective = () => {
+      const sun = st.live && st.live.sun;
+      return {
+        phase: st.time === "auto" ? phaseFor(new Date(), sun) : st.time,
+        weather: st.weather === "live" ? (st.live ? st.live.weather : "sunny") : st.weather
+      };
+    };
+
+    const noteHtml = () => {
+      const p = [esc(t(st.time === "auto" ? "Time follows your clock." : "Time set by you."))];
+      if (st.weather !== "live") p.push(esc(t("Weather set by you. Pick Live to follow the real weather.")));
+      else if (st.liveState === "loading") p.push(esc(t("Checking the weather…")));
+      else if (st.liveState === "ok") {
+        p.push(esc(t("Live weather for {city}: {temp}°C.", { city: st.live.city || t("your location"), temp: Math.round(st.live.temp) })));
+        p.push(esc(t(st.live.basis === "device" ? "Based on your device's location. It is not stored." : "Based on your time zone's main city, not your exact location.")));
+        p.push(`<a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">${esc(t("Weather data by Open-Meteo.com"))}</a>`);
+      } else if (st.liveState === "failed") {
+        p.push(esc(st.reason === "timezone"
+          ? t("Your time zone ({tz}) doesn't name a city. Try My location, or pick a weather.", { tz: st.tz })
+          : t("Couldn't reach the weather service (some preview windows and blockers stop it). The sky is clear for now.")));
+      }
+      if (st.live && st.live.declined) p.push(esc(t("Location permission was declined, so your time zone's city is used.")));
+      return p.join(" ");
+    };
+
+    const lineText = e => {
+      const time = timeText();
+      if (st.weather === "live") {
+        if (st.liveState === "loading" || st.liveState === "idle") return t("Checking the weather…");
+        if (st.liveState === "ok") {
+          const v = { time, city: st.live.city, temp: Math.round(st.live.temp), cond: condWord(e.weather, e.phase) };
+          return t(st.live.basis === "device" ? "It's {time} where you are: {temp}°C, {cond}." : "It's {time} in {city}: {temp}°C, {cond}.", v);
+        }
+        return t("It's {time} for you. Live weather isn't available here, so the sky is clear.", { time });
+      }
+      return t("It's {time}. Weather set to {w}.", { time, w: wxLabel(e.weather, e.phase) });
+    };
+
+    const render = () => {
+      const e = effective();
+      const icon = e.weather === "rainy" ? "rain" : e.weather === "snowy" ? "snow" : e.weather === "foggy" ? "fog" : e.weather === "cloudy" ? "cloud" : (e.phase === "night" ? "moon" : "sun");
+      const label = `${t(cap(e.phase))} · ${wxLabel(e.weather, e.phase)}`;
+      const b = $("#scene-btn");
+      b.innerHTML = ico(icon) + `<span class="lbl">${esc(label)}</span>`;
+      b.setAttribute("aria-label", t("Scene: {phase}, {weather}. Change time and weather.", { phase: t(cap(e.phase)), weather: wxLabel(e.weather, e.phase) }));
+      ctl.querySelectorAll("[data-time]").forEach(c => c.setAttribute("aria-pressed", c.dataset.time === st.time));
+      ctl.querySelectorAll("[data-wx]").forEach(c => {
+        const v = c.dataset.wx;
+        c.setAttribute("aria-pressed", v === "live" ? st.weather === "live" && !st.precise : v === "here" ? st.weather === "live" && st.precise : v === st.weather);
+      });
+      ctl.querySelectorAll("[data-tilt]").forEach(c => c.setAttribute("aria-pressed", !!(window.Tilt && window.Tilt.on)));
+      $("#sp-note").innerHTML = noteHtml();
+      if (line) line.textContent = lineText(e);
+    };
+
+    const apply = instant => {
+      const e = effective();
+      desk.setEnvironment(e.phase, e.weather, { instant: !!instant });
+      render();
+    };
+
+    const loadLive = async ask => {
+      st.liveState = "loading"; render();
+      try { st.live = await liveWeather({ ask }); st.liveState = "ok"; st.reason = ""; }
+      catch (err) { st.live = null; st.liveState = "failed"; st.reason = (err && err.code) || "network"; st.tz = (err && err.extra) || ""; }
+      apply(false);
+    };
+
+    // ----- interaction (events are delegated, so the panel can be rebuilt freely)
+    const setOpen = open => { $("#scene-pop").hidden = !open; $("#scene-btn").setAttribute("aria-expanded", open); };
+    ctl.addEventListener("click", async e => {
+      if (e.target.closest("#scene-btn")) { setOpen($("#scene-pop").hidden); return; }
+      if (e.target.closest("#lang-btn2")) { window.I18N.set(window.I18N.lang === "ar" ? "en" : "ar"); return; }
+      const tm = e.target.closest("[data-time]"), wx = e.target.closest("[data-wx]"), tl = e.target.closest("[data-tilt]");
+      if (tm) { st.time = tm.dataset.time; save(); apply(false); }
+      else if (wx) {
+        const v = wx.dataset.wx;
+        if (v === "live" || v === "here") {
+          st.weather = "live"; st.precise = v === "here"; save();
+          await loadLive(st.precise);
+        } else { st.weather = v; save(); apply(false); }
+      } else if (tl && window.Tilt) {
+        if (window.Tilt.on) { window.Tilt.disable(); st.tilt = "off"; }
+        else { st.tilt = (await window.Tilt.enable()) ? "on" : "off"; }
+        save(); render();
+      }
+    });
+    document.addEventListener("pointerdown", e => { if (!$("#scene-pop").hidden && !ctl.contains(e.target)) setOpen(false); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#scene-pop").hidden) { setOpen(false); $("#scene-btn").focus(); } });
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) { if (st.time === "auto") apply(false); else render(); } });
+
+    // a language change rebuilds the labels
+    window.I18N.onChange(() => { buildCtl(); render(); });
+
+    // ----- tilt: Android starts it by itself; iPhone waits for a tap
+    if (window.Tilt && window.Tilt.supported && (st.tilt === "on" || (st.tilt === undefined && !window.Tilt.needsPermission))) {
+      window.Tilt.enable().then(ok => { if (ok) render(); });
+    }
+
+    // first look: instantly, so the desk never flashes the wrong sky
+    apply(true);
+    if (st.weather === "live") loadLive(false);
+    setInterval(() => { if (st.time === "auto") apply(false); else render(); }, 60 * 1000);
+  }
+
+  window.SceneEnvironment = { init, phaseFor, weatherFromCode };
+})();
+
+</script>
+  <script>
+/* ==========================================================================
    Main controller — wires the desk, the tunnel backdrop and the browser.
    States: desk → entering → browser → exiting → desk
    ========================================================================== */
 (function () {
-  const C = window.CONTENT;
+  const content = () => window.I18N.content();
+  // what is drawn on the laptop screen and on the era clocks follows the language
+  const locale = () => {
+    const I = window.I18N, t = I.t;
+    return { rtl: I.rtl, role: content().profile.role, tabs: window.PortfolioBrowser.ROUTES.map(r => t(r.title)),
+             lines: [t("Backend / Blockchain / Intelligence & data"), t("BSc Computer Science")], cta: t("Step inside") };
+  };
+  const eraLabels = () => Object.fromEntries(Object.entries(window.PortfolioBrowser.ERA).map(([k, v]) => [k, window.I18N.t(v.label)]));
   const $ = s => document.querySelector(s);
   const body = document.body;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2723,8 +4026,12 @@ window.CONTENT = {
     renderer.toneMappingExposure = 1.15;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = T.PCFSoftShadowMap;
-    desk = new window.DeskScene(renderer, { mobile, reducedMotion: reduced, name: C.profile.name, role: C.profile.role });
-    tunnel = new window.TimeScene(renderer, { mobile, reducedMotion: reduced, labels: Object.fromEntries(Object.entries(window.PortfolioBrowser.ERA).map(([k, v]) => [k, v.label])) });
+    desk = new window.DeskScene(renderer, { mobile, reducedMotion: reduced, name: content().profile.name, role: content().profile.role });
+    desk.setLocale(locale());
+    if (window.SceneEnvironment) window.SceneEnvironment.init(desk);
+    tunnel = new window.TimeScene(renderer, { mobile, reducedMotion: reduced, labels: eraLabels() });
+    // tilting a phone moves the desk and the tunnel a little
+    if (window.Tilt) window.Tilt.setSink((x, y) => { desk.setPointer(x, y); tunnel.setPointer(x, y); });
   } else {
     body.classList.add("no-webgl");
   }
@@ -2747,8 +4054,11 @@ window.CONTENT = {
     }
     veil.style.opacity = 1;
     state = "browser";
-    if (!browser.current) browser.go(route, { instant: true });
-    else if (tunnel) tunnel.show(browser.current.key);
+    if (!browser.current) browser.go(route, { instant: true, focus: opts.focus, action: opts.action });
+    else {
+      if (tunnel) tunnel.show(browser.current.key);
+      if (opts.route) browser.go(opts.route, { instant: true, focus: opts.focus, action: opts.action });
+    }
     showBrowser();
     if (tunnel && !tunnel._warmed) { tunnel._warmed = true; tunnel.prewarm(window.PortfolioBrowser.ROUTES.map(r => r.key)); }
     setTimeout(() => { veil.style.opacity = 0; }, 60);
@@ -2797,22 +4107,45 @@ window.CONTENT = {
   // ---------- input ----------
   function ndc(e) { return { x: (e.clientX / window.innerWidth) * 2 - 1, y: -(e.clientY / window.innerHeight) * 2 + 1 }; }
 
+  // a small label that names whatever the pointer is over on the desk
+  const PROP_TIP = { hourglass: "Flip the hourglass", cv: "Open my CV", coin: "See the Egety project" };
+  const tip = document.createElement("div");
+  tip.className = "prop-tip"; tip.hidden = true; tip.setAttribute("aria-hidden", "true");
+  document.body.appendChild(tip);
+
   let hoverTick = 0;
   window.addEventListener("pointermove", e => {
     const p = ndc(e);
     if (desk) desk.setPointer(p.x, -p.y);
     if (tunnel) tunnel.setPointer(p.x, -p.y);
-    if (state === "desk" && desk && e.pointerType === "mouse" && ++hoverTick % 3 === 0) {
-      const hit = e.target === canvas && desk.hitScreen(p.x, p.y);
-      desk.hoverScreen = hit;
-      canvas.style.cursor = hit ? "pointer" : "";
+    if (state === "desk" && desk && e.pointerType === "mouse") {
+      const onCanvas = e.target === canvas;
+      const hit = onCanvas && desk.hitScreen(p.x, p.y);
+      const prop = onCanvas && !hit ? desk.pickProp(p.x, p.y) : null;
+      desk.hoverScreen = hit; desk.setHoverProp(prop);
+      canvas.style.cursor = hit || prop ? "pointer" : "";
+      if (prop) { tip.textContent = window.I18N.t(PROP_TIP[prop]); tip.hidden = false; tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; }
+      else tip.hidden = true;
     }
   }, { passive: true });
 
   canvas.addEventListener("click", e => {
     if (state !== "desk" || !desk) return;
     const p = ndc(e);
-    if (desk.hitScreen(p.x, p.y)) enterBrowser();
+    tip.hidden = true;
+    if (desk.hitScreen(p.x, p.y)) { enterBrowser(); return; }
+    const prop = desk.pickProp(p.x, p.y);
+    if (prop === "hourglass") desk.flipHourglass();
+    else if (prop === "cv") enterBrowser({ route: "resume", action: "open-cv" });
+    else if (prop === "coin") { desk.spinCoin(); enterBrowser({ route: "projects", focus: "proj-egety-blockchain" }); }
+  });
+  canvas.addEventListener("pointerleave", () => { tip.hidden = true; if (desk) desk.setHoverProp(null); });
+
+  // a language change: the laptop screen, the era clocks, the browser and the page follow
+  window.I18N.onChange(() => {
+    if (desk) desk.setLocale(locale());
+    if (tunnel) tunnel.relabel(eraLabels());
+    browser.relang();
   });
 
   window.addEventListener("wheel", e => { if (state === "desk" && e.deltaY > 25 && !loader.isConnected) enterBrowser(); }, { passive: true });

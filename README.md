@@ -35,6 +35,14 @@ All text lives in **`js/content.js`**: profile, education, certificates, experie
 
 `python3 build.py` writes `dist/index.html`, one self-contained file with every image and the CV embedded. Use it where you can only upload one file.
 
+## The desk: books, hourglass, time and weather
+
+- **Books:** the three books on the desk are Management, Blockchain and Artificial Intelligence. Titles, colours and cover art are in `BOOK_SPECS` at the top of `js/desk-scene.js`.
+- **Hourglass:** tap or click it (or use the Flip button) to flip it. The sand runs for 45 s, then it glows to invite another flip. Flipping mid-run sends the sand back up. Change `RUN` in `js/desk-scene.js` to change the duration.
+- **Time of day:** follows the visitor's own clock (dawn, day, dusk, night). With Live weather it uses the real sunrise and sunset for the visitor's area.
+- **Weather:** the Scene button (top right) offers Live, Sunny, Cloudy, Rainy, Foggy and Snowy. Live uses [Open-Meteo](https://open-meteo.com) (free, no API key). It looks up the main city of the visitor's time zone, so it needs no location permission and never learns the exact location. If the lookup fails, the sky is clear. The result is cached for 30 minutes and the visitor's choice is remembered in the browser.
+- The logic is in `js/environment.js`; the lighting, sky, rain, snow and fog are in `js/desk-scene.js`.
+
 ## Time travel
 
 Each page is a moment in time, defined by `ERA` at the top of `js/browser.js`:
@@ -64,4 +72,4 @@ js/main.js          ties it together (intro, enter/exit, input)
 
 Every page (Home, Education, Experience, Projects, Contact, Resume, Blog), the Education / Certificates tabs, project filters by technology and name, the interactive skills chart with hover details, CV download and in-page CV viewer, and all social and blog links.
 
-New: the address bar accepts page names (`projects`, `cv`, `blogs`…), back / forward / reload, shareable links such as `yoursite/#/projects` that open directly on a page, a contact form that opens your email app, one-click copy for the email and credential IDs, reduced-motion support, and a WebGL-free fallback.
+New: the address bar accepts page names (`projects`, `cv`, `blogs`…), back / forward / reload, shareable links such as `yoursite/#/projects` that open directly on a page, a contact form that opens your email app, one-click copy for the email and credential IDs, a flippable hourglass, and a desk whose sky, light and weather follow the visitor's time and place, reduced-motion support, and a WebGL-free fallback.

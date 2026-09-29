@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪐</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <!-- VENDOR_START -->
 <script>
@@ -22,19 +22,19 @@
 <!-- VENDOR_END -->
 </head>
 <body>
-  <canvas id="scene" aria-label="A desk at night with a laptop, a lamp, an hourglass and a window full of stars"></canvas>
+  <canvas id="scene" aria-label="A desk at night with a laptop, a lamp, an hourglass, three books and a window onto the weather outside"></canvas>
 
-  <div id="loader" role="status"><p><span class="dot"></span>Setting up the desk</p></div>
+  <div id="loader" role="status"><p><span class="dot"></span><span data-i18n="Setting up the desk">Setting up the desk</span></p></div>
 
   <section id="intro" class="intro" aria-label="Welcome">
     <div class="intro-card">
       <p class="intro-name">Georges Matta</p>
-      <p class="intro-role">Senior developer &amp; project manager</p>
+      <p class="intro-role" data-role>Senior developer &amp; project manager</p>
       <div class="actions">
-        <button id="enter-btn" class="btn primary" type="button">Step inside</button>
-        <button id="skip-btn" class="link-btn" type="button">Skip the intro</button>
+        <button id="enter-btn" class="btn primary" type="button" data-i18n="Step inside">Step inside</button>
+        <button id="skip-btn" class="link-btn" type="button" data-i18n="Skip the intro">Skip the intro</button>
       </div>
-      <p class="hint">Or tap the laptop screen</p>
+      <p class="hint" data-i18n="Tap the laptop to enter. Try the hourglass, the CV and the coin.">Tap the laptop to enter. Try the hourglass, the CV and the coin.</p>
     </div>
   </section>
 
@@ -44,9 +44,13 @@
   <noscript><p style="padding:24px">This portfolio needs JavaScript. Contact: testdevleb@gmail.com</p></noscript>
 
   <script src="js/content.js"></script>
+  <script src="js/content.ar.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/desk-scene.js"></script>
   <script src="js/time-scene.js"></script>
   <script src="js/browser.js"></script>
+  <script src="js/tilt.js"></script>
+  <script src="js/environment.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

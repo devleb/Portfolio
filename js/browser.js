@@ -3,7 +3,11 @@
    reload, and every portfolio page with its interactive features.
    ========================================================================== */
 (function () {
-  const C = window.CONTENT;
+  // the content in the current language (English or Arabic), always up to date
+  const C = new Proxy({}, { get: (_, k) => window.I18N.content()[k] });
+  const t = (s, v) => window.I18N.t(s, v);
+  const isAr = () => window.I18N.lang === "ar";
+  const joinList = a => (a.length < 2 ? a.join("") : a.slice(0, -1).join(isAr() ? "، " : ", ") + (isAr() ? " و" : " and ") + a[a.length - 1]);
   const A = window.ASSETS;
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -41,6 +45,7 @@
     notfound:   { n: null, label: "????" }
   };
   const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const pkey = p => p.key || slug(p.title);
 
   function resolveRoute(input) {
     let s = String(input || "").trim().toLowerCase();
@@ -89,13 +94,13 @@
   }
 
   async function copyText(text) {
-    try { await navigator.clipboard.writeText(text); toast("Copied " + text); return true; }
+    try { await navigator.clipboard.writeText(text); toast(t("Copied {x}", { x: text })); return true; }
     catch (e) {
       const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
       document.body.appendChild(ta); ta.select();
       let ok = false; try { ok = document.execCommand("copy"); } catch (e2) {}
       ta.remove();
-      toast(ok ? "Copied " + text : "Copy blocked here. The address is " + text);
+      toast(ok ? t("Copied {x}", { x: text }) : t("Copy blocked here. The address is {x}", { x: text }));
       return ok;
     }
   }
@@ -124,10 +129,10 @@
       try {
         const bytes = await cvBytes();
         await downloadsNS.save({ filename: A.cvFileName, data: new Blob([bytes], { type: "application/pdf" }) });
-        toast("CV saved");
+        toast(t("CV saved"));
       } catch (e) {
         if (e && e.code === "declined") return;
-        toast("The download didn't start here. Try the link on the published site.");
+        toast(t("The download didn't start here. Try the link on the published site."));
       }
       return;
     }
@@ -146,7 +151,7 @@
 
   async function renderPdf(container) {
     const V = window.VENDOR;
-    container.innerHTML = '<p class="muted">Loading the CV…</p>';
+    container.innerHTML = `<p class="muted">${esc(t("Loading the CV…"))}</p>`;
     try {
       await loadScript(V.pdfWorker); // runs on the main thread: no separate worker file needed
       await loadScript(V.pdf);
@@ -162,12 +167,12 @@
         const cv = document.createElement("canvas");
         cv.width = vp.width; cv.height = vp.height;
         cv.style.width = width + "px"; cv.style.maxWidth = "100%"; cv.style.height = "auto";
-        cv.className = "pdf-page"; cv.setAttribute("aria-label", "CV page " + i);
+        cv.className = "pdf-page"; cv.setAttribute("aria-label", t("CV page {i}", { i }));
         container.appendChild(cv);
         await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
       }
     } catch (e) {
-      container.innerHTML = `<p class="muted">The CV preview couldn't load (${esc(e.message)}). Use Download CV instead.</p>`;
+      container.innerHTML = `<p class="muted">${esc(t("The CV preview couldn't load ({msg}). Use Download CV instead.", { msg: e.message }))}</p>`;
     }
   }
 
@@ -203,7 +208,7 @@
       ${nodes}
       <circle cx="200" cy="200" r="60" class="lg-hub"/>
       <text x="200" y="206" class="lg-num-big">01</text>
-      <text x="200" y="232" class="lg-of">of ${String(n).padStart(2, "0")}</text>
+      <text x="200" y="232" class="lg-of">${esc(t("of {n}", { n: String(n).padStart(2, "0") }))}</text>
     </svg>`;
   }
 
@@ -224,29 +229,29 @@
       const years = new Date().getFullYear() - p.since;
       return `
       <section class="hero">
-        <div class="avatar-wrap"><img class="avatar" src="${A.profile}" alt="Portrait of ${esc(p.name)}" width="180" height="180"><span class="orbit" aria-hidden="true"><i></i></span></div>
+        <div class="avatar-wrap"><img class="avatar" src="${A.profile}" alt="${esc(t("Portrait of {name}", { name: p.name }))}" width="180" height="180"><span class="orbit" aria-hidden="true"><i></i></span></div>
         <h1 class="display">${esc(p.name)}</h1>
         <p class="role">${esc(p.role)}</p>
         <p class="lede">${esc(p.intro)}</p>
         <div class="actions">
-          <a class="btn primary" href="#/projects" data-nav="projects">See my projects</a>
-          <button class="btn" type="button" data-action="download-cv">${icon("download")}Download CV</button>
-          <a class="btn ghost" href="#/contact" data-nav="contact">Get in touch</a>
+          <a class="btn primary" href="#/projects" data-nav="projects">${esc(t("See my projects"))}</a>
+          <button class="btn" type="button" data-action="download-cv">${icon("download")}${esc(t("Download CV"))}</button>
+          <a class="btn ghost" href="#/contact" data-nav="contact">${esc(t("Get in touch"))}</a>
         </div>
         <dl class="facts">
-          <div><dt>In IT since</dt><dd>${p.since} <span class="muted">(${years} years)</span></dd></div>
-          <div><dt>Based in</dt><dd>${esc(p.location)}</dd></div>
-          <div><dt>Degree</dt><dd>BSc Computer Science</dd></div>
+          <div><dt>${esc(t("In IT since"))}</dt><dd>${p.since} <span class="muted">(${esc(t("{n} years", { n: years }))})</span></dd></div>
+          <div><dt>${esc(t("Based in"))}</dt><dd>${esc(p.location)}</dd></div>
+          <div><dt>${esc(t("Degree"))}</dt><dd>${esc(t("BSc Computer Science"))}</dd></div>
         </dl>
       </section>
       <section class="panel">
-        <h2>What I work on</h2>
+        <h2>${esc(t("What I work on"))}</h2>
         <div class="focus">
           ${p.focus.map(f => `<article><h3>${esc(f.title)}</h3><p>${esc(f.text)}</p>${tags(f.tech)}</article>`).join("")}
         </div>
       </section>
       <section class="panel slim">
-        <h2>Currently exploring</h2>
+        <h2>${esc(t("Currently exploring"))}</h2>
         <p>${esc(p.exploring)}</p>
       </section>`;
     },
@@ -254,10 +259,10 @@
     education() {
       const e = C.education;
       return `
-      <header class="page-head"><h1 class="display">Education</h1><p class="lede">A computer science degree, then a steady run of certifications.</p></header>
-      <div class="tabs-inline" role="tablist" aria-label="Education sections">
-        <button role="tab" id="t-degree" aria-controls="p-degree" aria-selected="true">📈 Degree</button>
-        <button role="tab" id="t-certs" aria-controls="p-certs" aria-selected="false" tabindex="-1">🗃 Certificates</button>
+      <header class="page-head"><h1 class="display">${esc(t("Education"))}</h1><p class="lede">${esc(t("A computer science degree, then a steady run of certifications."))}</p></header>
+      <div class="tabs-inline" role="tablist" aria-label="${esc(t("Education sections"))}">
+        <button role="tab" id="t-degree" aria-controls="p-degree" aria-selected="true">📈 ${esc(t("Degree"))}</button>
+        <button role="tab" id="t-certs" aria-controls="p-certs" aria-selected="false" tabindex="-1">🗃 ${esc(t("Certificates"))}</button>
       </div>
       <section class="panel" role="tabpanel" id="p-degree" aria-labelledby="t-degree">
         <p class="kicker">${esc(e.degree.years)}</p>
@@ -269,8 +274,8 @@
         <ol class="cert-list">
           ${e.certificates.map(c => `
             <li>
-              <div><h3>${esc(c.title)}</h3><p class="muted">${esc([c.issuer, c.date].filter(Boolean).join(", "))}</p></div>
-              ${c.id ? `<button class="chip-btn" type="button" data-copy="${esc(c.id)}" aria-label="Copy credential ID ${esc(c.id)}">${icon("copy")}<span>${esc(c.id)}</span></button>` : ""}
+              <div><h3>${esc(c.title)}</h3><p class="muted">${esc([c.issuer, c.date].filter(Boolean).join(isAr() ? "\u060c " : ", "))}</p></div>
+              ${c.id ? `<button class="chip-btn" type="button" data-copy="${esc(c.id)}" aria-label="${esc(t("Copy credential ID {id}", { id: c.id }))}">${icon("copy")}<span dir="ltr">${esc(c.id)}</span></button>` : ""}
             </li>`).join("")}
         </ol>
       </section>`;
@@ -281,7 +286,7 @@
         ${heading ? `<h3>${esc(heading)}</h3>` : ""}
         <ul class="role-projects">${list.map(p => `
           <li>
-            <button type="button" class="proj-link" data-goto-proj="${slug(p.title)}" aria-label="Open project ${esc(p.title)}"><span>${esc(p.title)}</span><small>${esc(projDates(p))}</small></button>
+            <button type="button" class="proj-link" data-goto-proj="${pkey(p)}" aria-label="${esc(t("Open project {name}", { name: p.title }))}"><span>${esc(p.title)}</span><small>${esc(projDates(p))}</small></button>
             <p>${esc(p.desc)}</p>
             ${tags(p.tech.slice(0, 5))}
           </li>`).join("")}
@@ -289,7 +294,7 @@
       const of = id => C.projects.filter(p => p.exp === id);
       const ind = C.independent;
       return `
-      <header class="page-head"><h1 class="display">Experience</h1><p class="lede">From IT support to managing a blockchain team, with the projects behind each role.</p></header>
+      <header class="page-head"><h1 class="display">${esc(t("Experience"))}</h1><p class="lede">${esc(t("From IT support to managing a blockchain team, with the projects behind each role."))}</p></header>
       <ol class="timeline">
         ${C.experience.map(x => `
           <li id="exp-${esc(x.id)}">
@@ -298,7 +303,7 @@
               <h2>${esc(x.role)}</h2>
               <p>${esc(x.text)}</p>
               <ul class="points">${x.points.map(p => `<li>${esc(p)}</li>`).join("")}</ul>
-              ${projList(of(x.id), "Projects in this role")}
+              ${projList(of(x.id), t("Projects in this role"))}
             </div>
           </li>`).join("")}
       </ol>
@@ -312,42 +317,42 @@
 
     projects() {
       const all = [...new Set(C.projects.flatMap(p => p.tech))].sort((a, b) => a.localeCompare(b));
-      const counts = Object.fromEntries(all.map(t => [t, C.projects.filter(p => p.tech.includes(t)).length]));
+      const counts = Object.fromEntries(all.map(x => [x, C.projects.filter(p => p.tech.includes(x)).length]));
       return `
-      <header class="page-head"><h1 class="display">Projects</h1><p class="lede">Filter by technology or search by name.</p></header>
+      <header class="page-head"><h1 class="display">${esc(t("Projects"))}</h1><p class="lede">${esc(t("Filter by technology or search by name. Tap a project to open it."))}</p></header>
       <section class="panel filters">
-        <label class="search">${icon("search")}<span class="sr">Find a project</span><input id="proj-q" type="search" placeholder="Find a project" autocomplete="off"></label>
-        <div class="chips" role="group" aria-label="Filter by technology" id="tech-chips">
-          ${all.map(t => `<button type="button" class="chip${counts[t] < 2 ? " rare" : ""}" data-tech="${esc(t)}" aria-pressed="false">${esc(t)} <span class="n">${counts[t]}</span></button>`).join("")}
-          <button type="button" class="link-btn" id="tech-more" aria-expanded="false">Show all ${all.length} technologies</button>
+        <label class="search">${icon("search")}<span class="sr">${esc(t("Find a project"))}</span><input id="proj-q" type="search" placeholder="${esc(t("Find a project"))}" autocomplete="off"></label>
+        <div class="chips" role="group" aria-label="${esc(t("Filter by technology"))}" id="tech-chips">
+          ${all.map(x => `<button type="button" class="chip${counts[x] < 2 ? " rare" : ""}" data-tech="${esc(x)}" aria-pressed="false">${esc(x)} <span class="n">${counts[x]}</span></button>`).join("")}
+          <button type="button" class="link-btn" id="tech-more" aria-expanded="false">${esc(t("Show all {n} technologies", { n: all.length }))}</button>
         </div>
-        <div class="filter-foot"><p id="proj-count" aria-live="polite"></p><button type="button" class="link-btn" id="proj-clear">Clear filters</button></div>
+        <div class="filter-foot"><p id="proj-count" aria-live="polite"></p><button type="button" class="link-btn" id="proj-clear">${esc(t("Clear filters"))}</button></div>
       </section>
       <div id="proj-grid" class="proj-grid"></div>`;
     },
 
     contact() {
       return `
-      <header class="page-head"><h1 class="display">Contact</h1><p class="lede">Open to projects, collaboration and a good technical conversation.</p></header>
+      <header class="page-head"><h1 class="display">${esc(t("Contact"))}</h1><p class="lede">${esc(t("Open to projects, collaboration and a good technical conversation."))}</p></header>
       <section class="links">
         ${C.links.map(l => `
           <a class="link-row" href="${esc(l.url)}" ${l.url.startsWith("mailto:") ? "" : 'target="_blank" rel="noopener noreferrer"'}>
             <span class="link-ico">${icon(l.id)}</span>
-            <span><strong>${esc(l.label)}</strong><small>${esc(l.sub)}</small></span>
+            <span><strong>${esc(l.label)}</strong><small dir="ltr">${esc(l.sub)}</small></span>
             ${l.url.startsWith("mailto:") ? "" : icon("ext", "ext")}
           </a>`).join("")}
       </section>
       <section class="panel">
-        <h2>Write a message</h2>
-        <p class="muted">This opens your email app with the message ready to send to ${esc(C.profile.email)}.</p>
+        <h2>${esc(t("Write a message"))}</h2>
+        <p class="muted">${esc(t("This opens your email app with the message ready to send to {email}.", { email: C.profile.email }))}</p>
         <div class="form" id="contact-form">
-          <label>Your name<input id="cf-name" autocomplete="name" required></label>
-          <label>Subject<input id="cf-subject" required></label>
-          <label class="full">Message<textarea id="cf-msg" rows="5" required></textarea></label>
+          <label>${esc(t("Your name"))}<input id="cf-name" autocomplete="name" required></label>
+          <label>${esc(t("Subject"))}<input id="cf-subject" required></label>
+          <label class="full">${esc(t("Message"))}<textarea id="cf-msg" rows="5" required></textarea></label>
           <p class="form-error full" id="cf-err" role="alert"></p>
           <div class="actions full">
-            <button class="btn primary" type="button" id="cf-send">${icon("send")}Open in email app</button>
-            <button class="btn ghost" type="button" data-copy="${esc(C.profile.email)}">${icon("copy")}Copy email address</button>
+            <button class="btn primary" type="button" id="cf-send">${icon("send")}${esc(t("Open in email app"))}</button>
+            <button class="btn ghost" type="button" data-copy="${esc(C.profile.email)}">${icon("copy")}${esc(t("Copy email address"))}</button>
           </div>
         </div>
       </section>`;
@@ -356,36 +361,37 @@
     resume() {
       const cats = C.skills.map(s => s.cat);
       return `
-      <header class="page-head"><h1 class="display">Resume</h1>
+      <header class="page-head"><h1 class="display">${esc(t("Resume"))}</h1>
         <div class="actions">
-          <button class="btn primary" type="button" data-action="download-cv">${icon("download")}Download CV</button>
-          <button class="btn" type="button" id="cv-toggle" aria-expanded="false" aria-controls="cv-view">${icon("eye")}View CV</button>
+          <button class="btn primary" type="button" data-action="download-cv">${icon("download")}${esc(t("Download CV"))}</button>
+          <button class="btn" type="button" id="cv-toggle" aria-expanded="false" aria-controls="cv-view">${icon("eye")}${esc(t("View CV"))}</button>
         </div>
+        ${isAr() ? `<p class="muted cv-note">${esc(t("The CV is currently available in English."))}</p>` : ""}
       </header>
       <section id="cv-view" class="panel cv-view" hidden></section>
       <div class="resume-grid">
         <div>
-          <section class="panel"><h2>About me</h2><p>${esc(C.profile.intro)}</p>
-            <ul class="points"><li>Keeps up with new technology, especially in development and programming.</li><li>Interested in data analytics, AI and NLP.</li><li>Web scraping and automation.</li></ul></section>
-          <section class="panel"><h2>Work experience</h2>
+          <section class="panel"><h2>${esc(t("About me"))}</h2><p>${esc(C.profile.intro)}</p>
+            <ul class="points"><li>${esc(t("Keeps up with new technology, especially in development and programming."))}</li><li>${esc(t("Interested in data analytics, AI and NLP."))}</li><li>${esc(t("Web scraping and automation."))}</li></ul></section>
+          <section class="panel"><h2>${esc(t("Work experience"))}</h2>
             <ul class="rows">${C.experience.map(x => `<li><span class="muted">${esc(x.years)}</span><span>${esc(x.role)}</span></li>`).join("")}</ul></section>
-          <section class="panel"><h2>Certificates</h2>
+          <section class="panel"><h2>${esc(t("Certificates"))}</h2>
             <ul class="rows">${C.education.certificates.map(c => `<li><span class="muted">${esc(c.date.split("–").pop().trim())}</span><span>${esc(c.title)}</span></li>`).join("")}</ul></section>
         </div>
         <aside>
-          <section class="panel"><h2>Info</h2>
-            <dl class="info"><div><dt>Email</dt><dd><a href="mailto:${esc(C.profile.email)}">${esc(C.profile.email)}</a></dd></div><div><dt>Location</dt><dd>${esc(C.profile.location)}</dd></div></dl></section>
-          <section class="panel"><h2>Education</h2>
+          <section class="panel"><h2>${esc(t("Info"))}</h2>
+            <dl class="info"><div><dt>${esc(t("Email"))}</dt><dd><a href="mailto:${esc(C.profile.email)}" dir="ltr">${esc(C.profile.email)}</a></dd></div><div><dt>${esc(t("Location"))}</dt><dd>${esc(C.profile.location)}</dd></div></dl></section>
+          <section class="panel"><h2>${esc(t("Education"))}</h2>
             <p><strong>${esc(C.education.degree.school)}</strong><br><span class="muted">${esc(C.education.degree.years)}</span></p>
             <p>${esc(C.education.degree.title)}</p>
             <ul class="points">${C.education.degree.points.map(x => `<li>${esc(x)}</li>`).join("")}</ul></section>
-          <section class="panel"><h2>Languages</h2>
+          <section class="panel"><h2>${esc(t("Languages"))}</h2>
             <dl class="info">${C.languages.map(([l, v]) => `<div><dt>${esc(l)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl></section>
         </aside>
       </div>
       <section class="panel lg" id="leadership">
-        <h2>Technical leadership</h2>
-        <p class="muted">Technical qualifications I bring to project management. Pick a category.</p>
+        <h2>${esc(t("Technical leadership"))}</h2>
+        <p class="muted">${esc(t("Technical qualifications I bring to project management. Pick a category."))}</p>
         <div class="lg-wrap">
           ${leadershipDial(C.leadership)}
           <ol class="lg-list">
@@ -395,11 +401,11 @@
                   <span class="lg-num">${String(i + 1).padStart(2, "0")}</span>
                   <span class="lg-ico">${icon(c.icon)}</span>
                   <span class="lg-name">${esc(c.cat)}</span>
-                  <span class="lg-count" aria-label="${c.items.length} qualifications">${c.items.length}</span>
+                  <span class="lg-count" aria-label="${esc(t("{n} qualifications", { n: c.items.length }))}">${c.items.length}</span>
                 </button>
                 <div class="lg-body" id="lg-p-${i}" role="region" aria-labelledby="lg-b-${i}">
                   <ul class="lg-items">${c.items.map(it => `
-                    <li><span class="lg-line"><strong>${esc(it.name)}</strong>${it.status ? `<span class="lg-status">${esc(it.status)}</span>` : ""}</span>${it.tags ? `<span class="lg-tags">${it.tags.map(t => `<span>${esc(t)}</span>`).join("")}</span>` : ""}</li>`).join("")}
+                    <li><span class="lg-line"><strong>${esc(it.name)}</strong>${it.status ? `<span class="lg-status">${esc(it.status)}</span>` : ""}</span>${it.tags ? `<span class="lg-tags">${it.tags.map(x => `<span>${esc(x)}</span>`).join("")}</span>` : ""}</li>`).join("")}
                   </ul>
                 </div>
               </li>`).join("")}
@@ -407,21 +413,21 @@
         </div>
       </section>
       <section class="panel">
-        <div class="skills-head"><h2>Skills</h2>
-          <div class="chips" role="group" aria-label="Filter skills by category">
-            <button type="button" class="chip" data-cat="all" aria-pressed="true">All</button>
+        <div class="skills-head"><h2>${esc(t("Skills"))}</h2>
+          <div class="chips" role="group" aria-label="${esc(t("Filter skills by category"))}">
+            <button type="button" class="chip" data-cat="all" aria-pressed="true">${esc(t("All"))}</button>
             ${cats.map(c => `<button type="button" class="chip" data-cat="${esc(c)}" aria-pressed="false">${esc(c)}</button>`).join("")}
           </div>
         </div>
         <div id="skills-chart" class="skills-chart"></div>
-        <ul class="legend" aria-label="Level legend"><li><i class="l5"></i>85% and above</li><li><i class="l4"></i>75–84%</li><li><i class="l3"></i>65–74%</li><li><i class="l2"></i>below 65%</li></ul>
+        <ul class="legend" aria-label="${esc(t("Level legend"))}"><li><i class="l5"></i>${esc(t("85% and above"))}</li><li><i class="l4"></i>${esc(t("75–84%"))}</li><li><i class="l3"></i>${esc(t("65–74%"))}</li><li><i class="l2"></i>${esc(t("below 65%"))}</li></ul>
         <div id="skill-tip" class="skill-tip" role="status" aria-live="polite"></div>
       </section>`;
     },
 
     blog() {
       return `
-      <header class="page-head"><h1 class="display">Blog</h1><p class="lede">Notes from learning in public.</p></header>
+      <header class="page-head"><h1 class="display">${esc(t("Blog"))}</h1><p class="lede">${esc(t("Notes from learning in public."))}</p></header>
       ${C.blogs.map(b => `
         <article class="panel post">
           <img src="${A[b.img] || b.img}" alt="" loading="lazy">
@@ -429,16 +435,16 @@
             <p class="kicker">${esc(b.date)}</p>
             <h2>${esc(b.title)}</h2>
             <p>${esc(b.excerpt)}</p>
-            <a class="btn" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">Read on Medium ${icon("ext")}</a>
+            <a class="btn" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(t("Read on Medium"))} ${icon("ext")}</a>
           </div>
         </article>`).join("")}`;
     },
 
     notfound(path) {
       return `
-      <header class="page-head"><h1 class="display">Lost in time</h1>
-        <p class="lede">${esc(SCHEME + path)} isn't a page on this site. Pick a destination:</p></header>
-      <section class="panel"><ul class="dest">${ROUTES.map(r => `<li><a href="#/${r.key}" data-nav="${r.key}">${r.icon} ${r.title}</a></li>`).join("")}</ul></section>`;
+      <header class="page-head"><h1 class="display">${esc(t("Lost in time"))}</h1>
+        <p class="lede">${esc(t("{path} isn't a page on this site. Pick a destination:", { path: SCHEME + path }))}</p></header>
+      <section class="panel"><ul class="dest">${ROUTES.map(r => `<li><a href="#/${r.key}" data-nav="${r.key}">${r.icon} ${esc(t(r.title))}</a></li>`).join("")}</ul></section>`;
     }
   };
 
@@ -470,50 +476,104 @@
       const count = root.querySelector("#proj-count");
       const q = root.querySelector("#proj-q");
       const chips = [...root.querySelectorAll(".chip[data-tech]")];
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const countText = n => !isAr() ? `${n} ${n === 1 ? "project" : "projects"}` : n === 1 ? "\u0645\u0634\u0631\u0648\u0639 \u0648\u0627\u062d\u062f" : n === 2 ? "\u0645\u0634\u0631\u0648\u0639\u0627\u0646" : n <= 10 ? `${n} \u0645\u0634\u0627\u0631\u064a\u0639` : `${n} \u0645\u0634\u0631\u0648\u0639\u064b\u0627`;
+
       const draw = () => {
         const list = C.projects.filter(p =>
-          (!state.tech.size || [...state.tech].every(t => p.tech.includes(t))) &&
+          (!state.tech.size || [...state.tech].every(x => p.tech.includes(x))) &&
           (!state.q || (p.title + " " + p.desc + " " + p.tech.join(" ")).toLowerCase().includes(state.q))
         );
-        count.textContent = `${list.length} ${list.length === 1 ? "project" : "projects"}`;
+        count.textContent = countText(list.length);
         chips.forEach(c => { const on = state.tech.has(c.dataset.tech); c.setAttribute("aria-pressed", on); c.classList.toggle("keep", on); });
         if (!list.length) {
-          grid.innerHTML = `<div class="panel empty"><p>No projects match these filters.</p><button type="button" class="btn" data-clear>Clear filters</button></div>`;
+          grid.innerHTML = `<div class="panel empty"><p>${esc(t("No projects match these filters."))}</p><button type="button" class="btn" data-clear>${esc(t("Clear filters"))}</button></div>`;
           return;
         }
         grid.innerHTML = list.map(p => {
-          const dates = [p.start, p.end].filter(Boolean);
-          const initials = p.title.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).map(w => w[0]).join("").slice(0, 3).toUpperCase();
+          const key = pkey(p), parts = key.split("-");
+          const initials = (parts.length > 1 ? parts.map(w => w[0]).join("") : key.slice(0, 3)).slice(0, 3).toUpperCase();
+          const meta = [projDates(p), p.role].filter(Boolean);
           return `
-          <article class="proj" id="proj-${slug(p.title)}">
-            <div class="cover" style="--h:${p.hue}" aria-hidden="true"><span>${esc(initials)}</span></div>
-            <div class="proj-body">
-              <h2>${esc(p.title)}</h2>
-              ${dates.length || p.role ? `<p class="meta">${dates.length ? `<span>${esc(dates[0] === dates[1] ? dates[0] : dates.join(" – "))}</span>` : ""}${p.role ? `<span>${esc(p.role)}</span>` : ""}</p>` : ""}
-              ${roleBadge(p)}
-              ${p.desc ? `<h3>Description</h3><p>${esc(p.desc)}</p>` : ""}
-              ${p.tasks && p.tasks.length ? `<h3>Tasks</h3><ul class="points">${p.tasks.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}
-              <div class="tag-row">${p.tech.map(t => `<button type="button" class="tag${state.tech.has(t) ? " on" : ""}" data-tech-add="${esc(t)}" aria-label="Filter by ${esc(t)}">${esc(t)}</button>`).join("")}</div>
-            </div>
+          <article class="proj book" id="proj-${key}">
+            <div class="book-tilt"><div class="book-body">
+              <div class="pg pg-inside" id="pg-${key}" inert aria-hidden="true">
+                <div class="pg-scroll">
+                  <h2>${esc(p.title)}</h2>
+                  ${meta.length ? `<p class="meta">${meta.map(m => `<span>${esc(m)}</span>`).join("")}</p>` : ""}
+                  ${roleBadge(p)}
+                  ${p.desc ? `<h3>${esc(t("Description"))}</h3><p>${esc(p.desc)}</p>` : ""}
+                  ${p.tasks && p.tasks.length ? `<h3>${esc(t("Tasks"))}</h3><ul class="points">${p.tasks.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+                  <div class="tag-row">${p.tech.map(x => `<button type="button" class="tag${state.tech.has(x) ? " on" : ""}" data-tech-add="${esc(x)}" aria-label="${esc(t("Filter by {name}", { name: x }))}">${esc(x)}</button>`).join("")}</div>
+                </div>
+                <button type="button" class="pg-close" aria-label="${esc(t("Close"))}">${icon("close")}</button>
+              </div>
+              <button type="button" class="pg pg-cover" aria-expanded="false" aria-controls="pg-${key}" aria-label="${esc(t("Open project {name}", { name: p.title }))}">
+                <span class="cover" style="--h:${p.hue}" aria-hidden="true"><span>${esc(initials)}</span></span>
+                <span class="cover-info">
+                  <span class="cv-title">${esc(p.title)}</span>
+                  ${meta.length ? `<span class="cv-meta">${esc(meta.join(" \u00b7 "))}</span>` : ""}
+                  <span class="cv-tags" aria-hidden="true">${p.tech.slice(0, 3).map(x => `<i>${esc(x)}</i>`).join("")}</span>
+                  <span class="cv-open" aria-hidden="true">${esc(t("Open"))} <b>\u203a</b></span>
+                </span>
+              </button>
+            </div></div>
           </article>`;
         }).join("");
       };
+
+      // a project is a book: the cover swings open onto the details
+      const setBook = (book, open, focus) => {
+        const cover = book.querySelector(".pg-cover"), inside = book.querySelector(".pg-inside");
+        book.classList.toggle("open", open);
+        cover.setAttribute("aria-expanded", open);
+        if (open) { inside.removeAttribute("inert"); inside.setAttribute("aria-hidden", "false"); cover.setAttribute("inert", ""); }
+        else { inside.setAttribute("inert", ""); inside.setAttribute("aria-hidden", "true"); cover.removeAttribute("inert"); }
+        if (focus) (open ? inside.querySelector(".pg-close") : cover).focus({ preventScroll: true });
+      };
+
       const more = root.querySelector("#tech-more"), chipBox = root.querySelector("#tech-chips");
       more.addEventListener("click", () => {
         const open = !chipBox.classList.contains("show-all");
         chipBox.classList.toggle("show-all", open);
         more.setAttribute("aria-expanded", open);
-        more.textContent = open ? "Show fewer" : `Show all ${chips.length} technologies`;
+        more.textContent = open ? t("Show fewer") : t("Show all {n} technologies", { n: chips.length });
       });
       q.addEventListener("input", () => { state.q = q.value.trim().toLowerCase(); draw(); });
-      chips.forEach(c => c.addEventListener("click", () => { const t = c.dataset.tech; state.tech.has(t) ? state.tech.delete(t) : state.tech.add(t); draw(); }));
+      chips.forEach(c => c.addEventListener("click", () => { const x = c.dataset.tech; state.tech.has(x) ? state.tech.delete(x) : state.tech.add(x); draw(); }));
       const clear = () => { state.q = ""; q.value = ""; state.tech.clear(); draw(); };
       root.querySelector("#proj-clear").addEventListener("click", clear);
       grid.addEventListener("click", e => {
+        const cover = e.target.closest(".pg-cover");
+        if (cover) { setBook(cover.closest(".book"), true, true); return; }
+        const close = e.target.closest(".pg-close");
+        if (close) { setBook(close.closest(".book"), false, true); return; }
         const b = e.target.closest("[data-tech-add]");
-        if (b) { const t = b.dataset.techAdd; state.tech.has(t) ? state.tech.delete(t) : state.tech.add(t); draw(); root.querySelector(".filters").scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+        if (b) { const x = b.dataset.techAdd; state.tech.has(x) ? state.tech.delete(x) : state.tech.add(x); draw(); root.querySelector(".filters").scrollIntoView({ behavior: "smooth", block: "nearest" }); }
         if (e.target.closest("[data-clear]")) clear();
       });
+      const onKey = e => {
+        if (!grid.isConnected) { document.removeEventListener("keydown", onKey); return; }
+        if (e.key !== "Escape") return;
+        grid.querySelectorAll(".book.open").forEach(book => setBook(book, false, book.contains(document.activeElement)));
+      };
+      document.addEventListener("keydown", onKey);
+
+      // the cards lean towards the pointer, with a soft glare (mouse only)
+      if (!reduced && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+        const rest = book => { book.style.setProperty("--rx", "0deg"); book.style.setProperty("--ry", "0deg"); book.style.setProperty("--glow", "0"); };
+        grid.addEventListener("pointermove", e => {
+          const book = e.target.closest(".book");
+          if (!book || book.classList.contains("open")) return;
+          const r = book.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+          book.style.setProperty("--ry", ((px - 0.5) * 10).toFixed(2) + "deg");
+          book.style.setProperty("--rx", ((0.5 - py) * 8).toFixed(2) + "deg");
+          book.style.setProperty("--mx", (px * 100).toFixed(1) + "%");
+          book.style.setProperty("--my", (py * 100).toFixed(1) + "%");
+          book.style.setProperty("--glow", "1");
+        });
+        grid.addEventListener("pointerout", e => { const book = e.target.closest(".book"); if (book && !book.contains(e.relatedTarget)) rest(book); });
+      }
       draw();
     },
 
@@ -521,12 +581,12 @@
       const $ = id => root.querySelector("#" + id);
       $("cf-send").addEventListener("click", () => {
         const name = $("cf-name").value.trim(), subject = $("cf-subject").value.trim(), msg = $("cf-msg").value.trim();
-        const missing = [!name && "your name", !subject && "a subject", !msg && "a message"].filter(Boolean);
-        if (missing.length) { $("cf-err").textContent = "Add " + missing.join(", ").replace(/, ([^,]*)$/, " and $1") + " first."; return; }
+        const missing = [!name && t("your name"), !subject && t("a subject"), !msg && t("a message")].filter(Boolean);
+        if (missing.length) { $("cf-err").textContent = t("Add {list} first.", { list: joinList(missing) }); return; }
         $("cf-err").textContent = "";
         const body = `${msg}\n\n— ${name}`;
         window.location.href = `mailto:${C.profile.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        toast("Opening your email app");
+        toast(t("Opening your email app"));
       });
     },
 
@@ -596,7 +656,7 @@
       };
       const show = el => {
         if (!el) { tip.classList.remove("show"); return; }
-        tip.innerHTML = `<strong>Skill:</strong> ${esc(el.dataset.skill)}<br><strong>Experience:</strong> ${el.dataset.v}%`;
+        tip.innerHTML = `<strong>${esc(t("Skill:"))}</strong> ${esc(el.dataset.skill)}<br><strong>${esc(t("Experience:"))}</strong> ${el.dataset.v}%`;
         const r = el.getBoundingClientRect(), pr = chart.parentElement.getBoundingClientRect();
         tip.style.left = Math.min(r.left - pr.left + 20, pr.width - 200) + "px";
         tip.style.top = r.top - pr.top - 56 + "px";
@@ -617,7 +677,7 @@
       tg.addEventListener("click", () => {
         const open = view.hidden;
         view.hidden = !open; tg.setAttribute("aria-expanded", open);
-        tg.lastChild.textContent = open ? "Hide CV" : "View CV";
+        tg.lastChild.textContent = t(open ? "Hide CV" : "View CV");
         if (open && !view.dataset.loaded) { view.dataset.loaded = "1"; renderPdf(view); }
         if (open) view.scrollIntoView({ behavior: "smooth", block: "start" });
       });
@@ -641,23 +701,24 @@
       <header class="chrome">
         <div class="tabbar">
           <div class="lights">
-            <button type="button" class="light red" data-desk aria-label="Close the browser and return to the desk"></button>
+            <button type="button" class="light red" data-desk data-i18n-label="Close the browser and return to the desk" aria-label="${esc(t("Close the browser and return to the desk"))}"></button>
             <span class="light yellow" aria-hidden="true"></span><span class="light green" aria-hidden="true"></span>
           </div>
-          <nav class="tabs" role="tablist" aria-label="Portfolio pages">
-            ${ROUTES.map(r => `<a class="tab" role="tab" href="#/${r.key}" data-nav="${r.key}" id="tab-${r.key}" aria-selected="false" aria-controls="viewport"><span class="fav" aria-hidden="true">${r.icon}</span><span class="tab-title">${r.title}</span></a>`).join("")}
+          <nav class="tabs" role="tablist" data-i18n-label="Portfolio pages" aria-label="${esc(t("Portfolio pages"))}">
+            ${ROUTES.map(r => `<a class="tab" role="tab" href="#/${r.key}" data-nav="${r.key}" id="tab-${r.key}" aria-selected="false" aria-controls="viewport"><span class="fav" aria-hidden="true">${r.icon}</span><span class="tab-title" data-i18n="${r.title}">${esc(t(r.title))}</span></a>`).join("")}
           </nav>
         </div>
         <div class="toolbar">
-          <button type="button" class="tool" id="nav-back" aria-label="Back">${icon("back")}</button>
-          <button type="button" class="tool" id="nav-fwd" aria-label="Forward">${icon("fwd")}</button>
-          <button type="button" class="tool" id="nav-reload" aria-label="Reload page">${icon("reload")}</button>
+          <button type="button" class="tool" id="nav-back" data-i18n-label="Back" aria-label="${esc(t("Back"))}">${icon("back")}</button>
+          <button type="button" class="tool" id="nav-fwd" data-i18n-label="Forward" aria-label="${esc(t("Forward"))}">${icon("fwd")}</button>
+          <button type="button" class="tool" id="nav-reload" data-i18n-label="Reload page" aria-label="${esc(t("Reload page"))}">${icon("reload")}</button>
           <form class="address" id="address" role="search">
             ${icon("lock", "lock")}
-            <label class="sr" for="addr">Address</label>
-            <input id="addr" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" enterkeyhint="go">
+            <label class="sr" for="addr" data-i18n="Address">${esc(t("Address"))}</label>
+            <input id="addr" type="text" dir="ltr" spellcheck="false" autocomplete="off" autocapitalize="off" enterkeyhint="go">
           </form>
-          <button type="button" class="tool desk-btn" data-desk aria-label="Back to the desk">${icon("desk")}<span>Desk</span></button>
+          <button type="button" class="tool lang-btn" id="lang-btn" data-i18n-label="Switch language" aria-label="${esc(t("Switch language"))}"><span data-lang-label>${esc(window.I18N.langLabel())}</span></button>
+          <button type="button" class="tool desk-btn" data-desk data-i18n-label="Back to the desk" aria-label="${esc(t("Back to the desk"))}">${icon("desk")}<span data-i18n="Desk">${esc(t("Desk"))}</span></button>
         </div>
         <div class="progress" aria-hidden="true"></div>
       </header>
@@ -677,6 +738,7 @@
       if (ge) { e.preventDefault(); this.go("experience", { focus: "exp-" + ge.dataset.gotoExp }); return; }
       const gp = e.target.closest("[data-goto-proj]");
       if (gp) { e.preventDefault(); this.go("projects", { focus: "proj-" + gp.dataset.gotoProj }); return; }
+      if (e.target.closest("#lang-btn")) { window.I18N.set(isAr() ? "en" : "ar"); return; }
       if (e.target.closest("[data-desk]")) { e.preventDefault(); this.hooks.onDesk(); return; }
       const cp = e.target.closest("[data-copy]");
       if (cp) { copyText(cp.dataset.copy); return; }
@@ -729,7 +791,7 @@
     this.root.querySelector("#nav-back").disabled = this.idx <= 0;
     this.root.querySelector("#nav-fwd").disabled = this.idx >= this.stack.length - 1;
     const r = ROUTES.find(r => r.key === key);
-    document.title = (r ? r.title : "Not found") + " — " + C.profile.name;
+    document.title = (r ? t(r.title) : t("Not found")) + " — " + C.profile.name;
     try { history.replaceState(null, "", "#/" + (key === "notfound" ? this.current.path : key)); } catch (e) {}
   };
 
@@ -769,15 +831,16 @@
       await w.done;
       this.root.classList.remove("warping");
     }
-    if (entry.focus) setTimeout(() => this._applyFocus(entry.focus), instant ? 120 : 60);
+    if (entry.focus || entry.action) setTimeout(() => { if (entry.focus) this._applyFocus(entry.focus); if (entry.action === "open-cv") this._openCv(); }, instant ? 180 : 90);
     this.busy = false;
     if (this.queued) { const q = this.queued; this.queued = null; this._transition(q[0], q[1]); }
   };
 
   Browser.prototype.go = function (key, opts = {}) {
-    const entry = { key, path: opts.path, focus: opts.focus };
+    const entry = { key, path: opts.path, focus: opts.focus, action: opts.action };
     if (this.current && this.current.key === key && key !== "notfound" && !opts.force) {
-      if (opts.focus) this._applyFocus(opts.focus); else this.viewport.scrollTo({ top: 0, behavior: "smooth" });
+      if (opts.focus || opts.action) { if (opts.focus) this._applyFocus(opts.focus); if (opts.action === "open-cv") this._openCv(); }
+      else this.viewport.scrollTo({ top: 0, behavior: "smooth" });
       this._syncChrome();
       return;
     }
@@ -804,8 +867,8 @@
   Browser.prototype._chrono = function (from, to, dir) {
     if (from === to || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const el = this.chrono, yr = el.querySelector(".chrono-year"), msg = el.querySelector(".chrono-dir");
-    const a = ERA[from] && ERA[from].n, b = (ERA[to] || ERA.notfound).n, label = (ERA[to] || ERA.notfound).label;
-    msg.textContent = dir < 0 ? "Travelling back" : "Travelling ahead";
+    const a = ERA[from] && ERA[from].n, b = (ERA[to] || ERA.notfound).n, label = t((ERA[to] || ERA.notfound).label);
+    msg.textContent = t(dir < 0 ? "Travelling back" : "Travelling ahead");
     clearTimeout(this._chronoT);
     el.classList.remove("settle"); el.classList.add("on");
     const dur = 720, t0 = performance.now();
@@ -828,6 +891,21 @@
     const t = el.querySelector(".panel") || el;
     t.classList.remove("flash"); void t.offsetWidth; t.classList.add("flash");
     setTimeout(() => t.classList.remove("flash"), 1800);
+    // a project opens its book
+    if (el.classList.contains("book") && !el.classList.contains("open")) { const c = el.querySelector(".pg-cover"); if (c) c.click(); }
+  };
+
+  // open the CV viewer on the Resume page
+  Browser.prototype._openCv = function () {
+    const tg = this.page.querySelector("#cv-toggle");
+    if (tg && tg.getAttribute("aria-expanded") !== "true") tg.click();
+  };
+
+  // the language changed: refresh the tabs, the toolbar and the page being shown
+  Browser.prototype.relang = function () {
+    const sc = this.viewport.scrollTop;
+    window.I18N.applyStatic();
+    if (this.current) { this._render(this.current); this.viewport.scrollTop = sc; this._syncChrome(); }
   };
 
   Browser.resolveRoute = resolveRoute;

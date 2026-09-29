@@ -3,7 +3,14 @@
    States: desk → entering → browser → exiting → desk
    ========================================================================== */
 (function () {
-  const C = window.CONTENT;
+  const content = () => window.I18N.content();
+  // what is drawn on the laptop screen and on the era clocks follows the language
+  const locale = () => {
+    const I = window.I18N, t = I.t;
+    return { rtl: I.rtl, role: content().profile.role, tabs: window.PortfolioBrowser.ROUTES.map(r => t(r.title)),
+             lines: [t("Backend / Blockchain / Intelligence & data"), t("BSc Computer Science")], cta: t("Step inside") };
+  };
+  const eraLabels = () => Object.fromEntries(Object.entries(window.PortfolioBrowser.ERA).map(([k, v]) => [k, window.I18N.t(v.label)]));
   const $ = s => document.querySelector(s);
   const body = document.body;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -51,8 +58,12 @@
     renderer.toneMappingExposure = 1.15;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = T.PCFSoftShadowMap;
-    desk = new window.DeskScene(renderer, { mobile, reducedMotion: reduced, name: C.profile.name, role: C.profile.role });
-    tunnel = new window.TimeScene(renderer, { mobile, reducedMotion: reduced, labels: Object.fromEntries(Object.entries(window.PortfolioBrowser.ERA).map(([k, v]) => [k, v.label])) });
+    desk = new window.DeskScene(renderer, { mobile, reducedMotion: reduced, name: content().profile.name, role: content().profile.role });
+    desk.setLocale(locale());
+    if (window.SceneEnvironment) window.SceneEnvironment.init(desk);
+    tunnel = new window.TimeScene(renderer, { mobile, reducedMotion: reduced, labels: eraLabels() });
+    // tilting a phone moves the desk and the tunnel a little
+    if (window.Tilt) window.Tilt.setSink((x, y) => { desk.setPointer(x, y); tunnel.setPointer(x, y); });
   } else {
     body.classList.add("no-webgl");
   }
@@ -75,8 +86,11 @@
     }
     veil.style.opacity = 1;
     state = "browser";
-    if (!browser.current) browser.go(route, { instant: true });
-    else if (tunnel) tunnel.show(browser.current.key);
+    if (!browser.current) browser.go(route, { instant: true, focus: opts.focus, action: opts.action });
+    else {
+      if (tunnel) tunnel.show(browser.current.key);
+      if (opts.route) browser.go(opts.route, { instant: true, focus: opts.focus, action: opts.action });
+    }
     showBrowser();
     if (tunnel && !tunnel._warmed) { tunnel._warmed = true; tunnel.prewarm(window.PortfolioBrowser.ROUTES.map(r => r.key)); }
     setTimeout(() => { veil.style.opacity = 0; }, 60);
@@ -125,22 +139,45 @@
   // ---------- input ----------
   function ndc(e) { return { x: (e.clientX / window.innerWidth) * 2 - 1, y: -(e.clientY / window.innerHeight) * 2 + 1 }; }
 
+  // a small label that names whatever the pointer is over on the desk
+  const PROP_TIP = { hourglass: "Flip the hourglass", cv: "Open my CV", coin: "See the Egety project" };
+  const tip = document.createElement("div");
+  tip.className = "prop-tip"; tip.hidden = true; tip.setAttribute("aria-hidden", "true");
+  document.body.appendChild(tip);
+
   let hoverTick = 0;
   window.addEventListener("pointermove", e => {
     const p = ndc(e);
     if (desk) desk.setPointer(p.x, -p.y);
     if (tunnel) tunnel.setPointer(p.x, -p.y);
-    if (state === "desk" && desk && e.pointerType === "mouse" && ++hoverTick % 3 === 0) {
-      const hit = e.target === canvas && desk.hitScreen(p.x, p.y);
-      desk.hoverScreen = hit;
-      canvas.style.cursor = hit ? "pointer" : "";
+    if (state === "desk" && desk && e.pointerType === "mouse") {
+      const onCanvas = e.target === canvas;
+      const hit = onCanvas && desk.hitScreen(p.x, p.y);
+      const prop = onCanvas && !hit ? desk.pickProp(p.x, p.y) : null;
+      desk.hoverScreen = hit; desk.setHoverProp(prop);
+      canvas.style.cursor = hit || prop ? "pointer" : "";
+      if (prop) { tip.textContent = window.I18N.t(PROP_TIP[prop]); tip.hidden = false; tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; }
+      else tip.hidden = true;
     }
   }, { passive: true });
 
   canvas.addEventListener("click", e => {
     if (state !== "desk" || !desk) return;
     const p = ndc(e);
-    if (desk.hitScreen(p.x, p.y)) enterBrowser();
+    tip.hidden = true;
+    if (desk.hitScreen(p.x, p.y)) { enterBrowser(); return; }
+    const prop = desk.pickProp(p.x, p.y);
+    if (prop === "hourglass") desk.flipHourglass();
+    else if (prop === "cv") enterBrowser({ route: "resume", action: "open-cv" });
+    else if (prop === "coin") { desk.spinCoin(); enterBrowser({ route: "projects", focus: "proj-egety-blockchain" }); }
+  });
+  canvas.addEventListener("pointerleave", () => { tip.hidden = true; if (desk) desk.setHoverProp(null); });
+
+  // a language change: the laptop screen, the era clocks, the browser and the page follow
+  window.I18N.onChange(() => {
+    if (desk) desk.setLocale(locale());
+    if (tunnel) tunnel.relabel(eraLabels());
+    browser.relang();
   });
 
   window.addEventListener("wheel", e => { if (state === "desk" && e.deltaY > 25 && !loader.isConnected) enterBrowser(); }, { passive: true });

@@ -339,7 +339,7 @@
   }
 
   // ======================================================================
-  // ---------- props you can tap: the CV sheet and the Egety coin ----------
+  // ---------- props you can tap: the CV sheet and the Egety token ----------
   function cvSheetTexture(name, role) {
     return canvasTex(420, 594, (g, w, h) => {
       g.fillStyle = "#f7f3ea"; g.fillRect(0, 0, w, h);
@@ -360,19 +360,6 @@
       y = section(y, "PROFILE", 3); y = section(y + 6, "WORK EXPERIENCE", 8); y = section(y + 6, "TECHNICAL LEADERSHIP", 5); section(y + 6, "EDUCATION", 3);
     }, { aniso: 8 });
   }
-  function coinTexture() {
-    return canvasTex(256, 256, (g, w) => {
-      const c = w / 2, gr = g.createRadialGradient(c * 0.8, c * 0.7, 10, c, c, c);
-      gr.addColorStop(0, "#ffe9a8"); gr.addColorStop(0.6, "#e0b04a"); gr.addColorStop(1, "#a9791f");
-      g.fillStyle = gr; g.fillRect(0, 0, w, w);
-      g.strokeStyle = "#7a5510"; g.lineWidth = 8; g.beginPath(); g.arc(c, c, c - 16, 0, TAU); g.stroke();
-      g.lineWidth = 3; g.beginPath(); g.arc(c, c, c - 30, 0, TAU); g.stroke();
-      g.fillStyle = "#6b4a0e"; g.textAlign = "center"; g.textBaseline = "middle";
-      g.font = "700 150px Georgia, 'Times New Roman', serif"; g.fillText("E", c, c - 8);
-      g.font = "700 22px Arial, sans-serif"; g.fillText("EGETY", c, c + 88);
-    });
-  }
-
   function DeskScene(renderer, opts) {
     this.renderer = renderer;
     this.mobile = opts.mobile;
@@ -640,16 +627,35 @@
     cvHit.position.y = 0.012; cvHit.userData.prop = "cv"; cvGroup.add(cvHit);
     this.cvGroup = cvGroup; this.cvHit = cvHit;
 
-    // --- Egety coin on a little stand: tap it to see the project
+    // --- Egety token (the project's hexagon logo) on a little stand: tap it to see the project
     const coinBase = new T.Group(); coinBase.position.set(-0.4, DESK_Y, -0.26); s.add(coinBase);
-    const brass2 = new T.MeshStandardMaterial({ color: "#b8945a", metalness: 0.7, roughness: 0.35 });
-    const cBase = new T.Mesh(new T.CylinderGeometry(0.03, 0.034, 0.008, 32), brass2); cBase.position.y = 0.004; cBase.castShadow = true; coinBase.add(cBase);
-    const cPost = new T.Mesh(new T.CylinderGeometry(0.0025, 0.0025, 0.08, 8), brass2); cPost.position.y = 0.048; coinBase.add(cPost);
-    const coinSpin = new T.Group(); coinSpin.position.y = 0.098; coinBase.add(coinSpin);
-    const rimMat = new T.MeshStandardMaterial({ color: "#c9992e", metalness: 0.7, roughness: 0.35 });
-    const faceMat = new T.MeshStandardMaterial({ map: coinTexture(), metalness: 0.5, roughness: 0.4, emissive: "#3a2a08", emissiveIntensity: 0.35 });
-    const coinMesh = new T.Mesh(new T.CylinderGeometry(0.038, 0.038, 0.007, 48), [rimMat, faceMat, faceMat]);
-    coinMesh.rotation.x = Math.PI / 2; coinMesh.castShadow = true; coinSpin.add(coinMesh);
+    const brass2 = new T.MeshStandardMaterial({ color: "#6f7f99", metalness: 0.8, roughness: 0.3 });
+    const cBase = new T.Mesh(new T.CylinderGeometry(0.03, 0.034, 0.008, 6), brass2); cBase.position.y = 0.004; cBase.castShadow = true; coinBase.add(cBase);
+    const cPost = new T.Mesh(new T.CylinderGeometry(0.0025, 0.0025, 0.07, 8), brass2); cPost.position.y = 0.043; coinBase.add(cPost);
+    const coinSpin = new T.Group(); coinSpin.position.y = 0.106; coinBase.add(coinSpin);
+    const R = 0.046, DEPTH = 0.008;
+    // hexagonal body, pointy top like the logo
+    const rimMat = new T.MeshStandardMaterial({ color: "#0e2a52", metalness: 0.75, roughness: 0.3, emissive: "#0b5fa8", emissiveIntensity: 0.35 });
+    const hexBody = new T.Mesh(new T.CylinderGeometry(R * 0.97, R * 0.97, DEPTH, 6), rimMat);
+    hexBody.rotation.x = Math.PI / 2; hexBody.castShadow = true; coinSpin.add(hexBody);
+    // the logo on both faces; it glows a little, like the icon
+    const logoTex = new T.TextureLoader().load(window.ASSETS.egety);
+    logoTex.encoding = T.sRGBEncoding; logoTex.anisotropy = 8;
+    const faceMat = new T.MeshStandardMaterial({ map: logoTex, emissiveMap: logoTex, emissive: "#ffffff", emissiveIntensity: 0.75, metalness: 0.3, roughness: 0.35, transparent: true, alphaTest: 0.05 });
+    const faceGeo = new T.PlaneGeometry(2 * R * (82 / 96), 2 * R);
+    [1, -1].forEach(side => {
+      const f = new T.Mesh(faceGeo, faceMat);
+      f.position.z = side * (DEPTH / 2 + 0.0004); if (side < 0) f.rotation.y = Math.PI;
+      coinSpin.add(f);
+    });
+    // soft blue halo behind the token
+    const haloTex = canvasTex(128, 128, (g, w) => {
+      const gr = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+      gr.addColorStop(0, "rgba(70,190,255,.55)"); gr.addColorStop(0.45, "rgba(40,140,255,.16)"); gr.addColorStop(1, "rgba(40,140,255,0)");
+      g.fillStyle = gr; g.fillRect(0, 0, w, w);
+    });
+    const halo = new T.Sprite(new T.SpriteMaterial({ map: haloTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
+    halo.scale.setScalar(0.2); coinSpin.add(halo);
     const coinHit = new T.Mesh(new T.CylinderGeometry(0.065, 0.065, 0.14, 12), new T.MeshBasicMaterial({ visible: false }));
     coinHit.position.y = 0.09; coinHit.userData.prop = "coin"; coinBase.add(coinHit);
     this.coin = { group: coinBase, spin: coinSpin, boost: 0 }; this.coinHit = coinHit;
@@ -713,7 +719,7 @@
       g.beginPath(); g.arc(st.x * w, st.y * h, st.r, 0, TAU); g.fill();
     });
     const L = this.loc, rtl = !!L.rtl, fx = x => (rtl ? w - x : x);      // fx mirrors a position for right-to-left
-    const FONT = "'Cairo', 'Instrument Sans', system-ui, sans-serif";
+    const FONT = "'Instrument Sans', system-ui, sans-serif";
     // time dial: a brass-rimmed clock whose minute hand runs backwards
     const px = w * (rtl ? 0.23 : 0.77), py = h * 0.58, pr = 150;
     const halo = g.createRadialGradient(px, py, pr * 0.7, px, py, pr * 2.1);
@@ -816,7 +822,7 @@
     this.cvGroup.position.y += (target - this.cvGroup.position.y) * (this.reduced ? 1 : 1 - Math.exp(-dt * 10));
   };
 
-  // text drawn on the laptop screen (English or Arabic, left-to-right or right-to-left)
+  // text drawn on the laptop screen
   DeskScene.prototype.setLocale = function (loc) { this.loc = Object.assign({}, this.loc, loc); };
 
   // The sand runs for 45 s and then waits for the visitor to flip the hourglass.

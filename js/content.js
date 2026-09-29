@@ -7,7 +7,8 @@ window.ASSETS = {
   profile: "assets/img/profile.jpg",
   blog1: "assets/img/blog-data-analysis.jpg",
   cv: "assets/cv/Georges-Matta-CV.pdf",
-  cvFileName: "Georges-Matta-CV.pdf"
+  cvFileName: "Georges-Matta-CV.pdf",
+  egety: "assets/img/egety.webp"
 };
 
 window.CONTENT = {
@@ -28,7 +29,7 @@ window.CONTENT = {
       },
       {
         title: "Blockchain",
-        text: "A custom Go blockchain, liquidity pool and mining backends, node API integrations and load testing.",
+        text: "The Egety ecosystem: a custom Go blockchain with its full node, a DApp, an AI website builder and a mobile app, plus liquidity pool and mining backends.",
         tech: ["Go", "SQLite", "Locust"]
       },
       {
@@ -67,9 +68,10 @@ window.CONTENT = {
       id: "pm",
       role: "Project Manager — Egety blockchain",
       years: "2024 – Present",
-      text: "Leading the team that builds Egety, a custom blockchain written in Go, from technical specification to delivery.",
+      text: "Leading the team that builds Egety, a full blockchain ecosystem around a custom blockchain written in Go, from technical specification to delivery.",
       points: [
         "Own the project plan, task breakdown and delivery across the team.",
+        "Deliver the ecosystem's four applications: the backend full node, the DApp, the AI website builder and the mobile app.",
         "Review technical specifications, run gap analysis and turn open questions into clear client clarifications.",
         "Oversee the Go backend work: liquidity pool, mining services and node API integrations.",
         "Coordinate load testing with Locust."
@@ -126,13 +128,21 @@ window.CONTENT = {
     {
       title: "Egety blockchain",
       key: "egety-blockchain",
+      logo: "egety",
       exp: "pm",
       start: "2024", end: "Present",
       tech: ["Go", "SQLite", "Locust", "NowNodes API"],
       role: "Project manager",
-      desc: "A custom blockchain written in Go with a fixed 10M coin supply, a liquidity pool backend and an LTC mining backend.",
-      tasks: ["Technical specification review and gap analysis", "Liquidity pool and mining services", "Node API integration", "Load testing with Locust"],
-      hue: 38
+      desc: "A full blockchain ecosystem built around a custom blockchain written in Go with a fixed 10M coin supply. Four applications work together on the chain: a backend full node, a DApp, a website builder with AI and a mobile application.",
+      /* Ecosystem: the applications that make up the project. icon: node, dapp, builder or mobile. */
+      apps: [
+        { name: "Full node", kind: "Backend", icon: "node", text: "The Go backend that runs the Egety chain, with the liquidity pool and LTC mining services and the node API integrations." },
+        { name: "DApp", kind: "Decentralized app", icon: "dapp", text: "The decentralized application for using Egety on-chain from the browser." },
+        { name: "Website builder", kind: "With AI", icon: "builder", text: "A website builder with AI assistance, part of the Egety ecosystem." },
+        { name: "Mobile app", kind: "Mobile application", icon: "mobile", text: "The Egety ecosystem on the phone." }
+      ],
+      tasks: ["Technical specification review and gap analysis", "Delivery of the full node, DApp, AI website builder and mobile app", "Liquidity pool and mining services", "Node API integration", "Load testing with Locust"],
+      hue: 205
     },
     {
       title: "Market data tracker",

@@ -39,7 +39,8 @@
     onWarp: (key, dir) => (tunnel ? tunnel.warpTo(key, dir) : { mid: Promise.resolve(), done: new Promise(r => setTimeout(r, reduced ? 0 : 350)) }),
     onShow: key => tunnel && tunnel.show(key),
     onDesk: () => exitToDesk(),
-    onScroll: p => tunnel && tunnel.setScroll(p)
+    onScroll: p => tunnel && tunnel.setScroll(p),
+    onYear: (key, label, dir) => tunnel && tunnel.setLabel(key, label, dir)
   });
 
   function routeFromHash() {
@@ -140,7 +141,7 @@
   function ndc(e) { return { x: (e.clientX / window.innerWidth) * 2 - 1, y: -(e.clientY / window.innerHeight) * 2 + 1 }; }
 
   // a small label that names whatever the pointer is over on the desk
-  const PROP_TIP = { hourglass: "Flip the hourglass", cv: "Open my CV", coin: "See the Egety project" };
+  const PROP_TIP = { hourglass: "Flip the hourglass", cv: "Open my CV", coin: "See the Egety ecosystem" };
   const tip = document.createElement("div");
   tip.className = "prop-tip"; tip.hidden = true; tip.setAttribute("aria-hidden", "true");
   document.body.appendChild(tip);
@@ -173,12 +174,6 @@
   });
   canvas.addEventListener("pointerleave", () => { tip.hidden = true; if (desk) desk.setHoverProp(null); });
 
-  // a language change: the laptop screen, the era clocks, the browser and the page follow
-  window.I18N.onChange(() => {
-    if (desk) desk.setLocale(locale());
-    if (tunnel) tunnel.relabel(eraLabels());
-    browser.relang();
-  });
 
   window.addEventListener("wheel", e => { if (state === "desk" && e.deltaY > 25 && !loader.isConnected) enterBrowser(); }, { passive: true });
   let touchY = null;
@@ -203,6 +198,7 @@
     renderer.setSize(window.innerWidth, window.innerHeight, false);
     desk.resize(window.innerWidth, window.innerHeight);
     tunnel.resize(window.innerWidth, window.innerHeight);
+    browser.refreshYear();
   });
 
   // ---------- start ----------

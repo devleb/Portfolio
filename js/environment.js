@@ -39,7 +39,7 @@
     if (m >= set - 90 && m < set + 60) return "dusk";
     return "night";
   }
-  const timeText = () => new Date().toLocaleTimeString(window.I18N.lang === "ar" ? "ar-u-nu-latn" : [], { hour: "numeric", minute: "2-digit" });
+  const timeText = () => new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
   // ---------- weather ----------
   // WMO weather codes used by Open-Meteo
@@ -169,7 +169,6 @@
       const old = ctl.querySelector("#scene-pop");
       const open = !!old && !old.hidden;
       ctl.innerHTML = `
-        <button type="button" class="scene-btn" id="lang-btn2" aria-label="${esc(t("Switch language"))}"><span class="lbl">${esc(window.I18N.langLabel())}</span></button>
         <button type="button" class="scene-btn" id="scene-btn" aria-expanded="${open}" aria-controls="scene-pop" aria-haspopup="dialog">${ico("sun")}<span class="lbl"></span></button>
         <div class="scene-pop" id="scene-pop" role="dialog" aria-label="${esc(t("Time of day and weather"))}"${open ? "" : " hidden"}>${buildPop()}</div>`;
     };
@@ -249,7 +248,6 @@
     const setOpen = open => { $("#scene-pop").hidden = !open; $("#scene-btn").setAttribute("aria-expanded", open); };
     ctl.addEventListener("click", async e => {
       if (e.target.closest("#scene-btn")) { setOpen($("#scene-pop").hidden); return; }
-      if (e.target.closest("#lang-btn2")) { window.I18N.set(window.I18N.lang === "ar" ? "en" : "ar"); return; }
       const tm = e.target.closest("[data-time]"), wx = e.target.closest("[data-wx]"), tl = e.target.closest("[data-tilt]");
       if (tm) { st.time = tm.dataset.time; save(); apply(false); }
       else if (wx) {
@@ -269,7 +267,6 @@
     document.addEventListener("visibilitychange", () => { if (!document.hidden) { if (st.time === "auto") apply(false); else render(); } });
 
     // a language change rebuilds the labels
-    window.I18N.onChange(() => { buildCtl(); render(); });
 
     // ----- tilt: Android starts it by itself; iPhone waits for a tap
     if (window.Tilt && window.Tilt.supported && (st.tilt === "on" || (st.tilt === undefined && !window.Tilt.needsPermission))) {

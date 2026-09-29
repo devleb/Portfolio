@@ -77,7 +77,11 @@
 
   // the enamel face of an era clock, with its year label
   function faceTexture(label, cfg, size = 1024) {
-    return tex(size, size, (g, w) => {
+    return tex(size, size, (g, w) => drawFace(g, w, label, cfg));
+  }
+  function drawFace(g, w, label, cfg) {
+    {
+      g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, w);
       g.scale(w / 1024, w / 1024); w = 1024;
       const c = w / 2;
       const bg = g.createRadialGradient(c * 0.8, c * 0.7, 40, c, c, c);
@@ -97,9 +101,9 @@
       g.textAlign = "center"; g.textBaseline = "middle";
       [0, 3, 6, 9].forEach(i => { const a = (i / 12) * TAU - Math.PI / 2; g.fillText(ROMAN[i], c + Math.cos(a) * (c - 160), c + Math.sin(a) * (c - 160)); });
       g.fillStyle = rgba(cfg.tint, 1);
-      g.font = `700 ${label.length > 4 ? 120 : 150}px 'Unbounded', 'Cairo', 'Instrument Sans', system-ui, sans-serif`;
+      g.font = `700 ${label.length > 4 ? 120 : 150}px 'Unbounded', 'Instrument Sans', system-ui, sans-serif`;
       g.fillText(label, c, c + 220);
-    });
+    }
   }
 
   function TimeScene(renderer, opts) {
@@ -118,6 +122,7 @@
     this.clock = 0;
     this.pointer = new T.Vector2(); this.pointerSmooth = new T.Vector2();
     this.scroll = 0; this.scrollSmooth = 0;
+    this.nudge = 0;
     this.cache = {};
     this.labels = opts.labels || {};
     this.warp = null;
@@ -202,7 +207,8 @@
     glow.scale.setScalar(26); g.add(glow);
 
     const body = new T.Group(); g.add(body);
-    const face = new T.Mesh(new T.CircleGeometry(4.3, 72), new T.MeshStandardMaterial({ map: faceTexture(label, cfg, this.S), roughness: 0.5, metalness: 0.1 }));
+    const faceMap = faceTexture(label, cfg, this.S);
+    const face = new T.Mesh(new T.CircleGeometry(4.3, 72), new T.MeshStandardMaterial({ map: faceMap, roughness: 0.5, metalness: 0.1 }));
     body.add(face);
     const rim = new T.Mesh(new T.TorusGeometry(4.45, 0.22, 16, 96), metal); body.add(rim);
     const dialMap = this.dialCache[cfg.metal] || (this.dialCache[cfg.metal] = dialTexture(0, cfg.metal, this.S));
@@ -227,8 +233,26 @@
     });
 
     g.rotation.set(0.12, -0.38, 0);
-    g.userData = { hour, minute, dial, arms, spin: 0 };
+    g.userData = { hour, minute, dial, arms, spin: 0, faceMap, cfg, label, glow, pop: 0 };
     return g;
+  };
+
+  // repaint the year on a clock face (the Experience clock follows the scroll)
+  TimeScene.prototype._paint = function (m, label) {
+    const u = m.userData;
+    if (u.label === label) return false;
+    const cv = u.faceMap.image;
+    drawFace(cv.getContext("2d"), cv.width, label, u.cfg);
+    u.faceMap.needsUpdate = true; u.label = label;
+    return true;
+  };
+  /* Show another year on a page's clock. dir: -1 into the past, +1 into the future;
+     the hands whirl that way and the clock pulses. */
+  TimeScene.prototype.setLabel = function (key, label, dir) {
+    const m = this._marker(key);
+    if (!this._paint(m, label) || this.reduced || !dir) return;
+    this.nudge = clamp(this.nudge - dir * 2.2, -7, 7);
+    m.userData.pop = 1;
   };
 
   TimeScene.prototype._marker = function (key) {
@@ -285,6 +309,7 @@
       w.midRes(); w.doneRes(); this.current = w.next;
     }
     const old = this.current, next = this._marker(key), rest = this._restPos();
+    if (next !== old) this._paint(next, this.labels[key] || "????");
     if (next !== old) {
       next.position.set(rest.x * 0.2, rest.y * 0.2, -600);
       next.scale.setScalar(this._restScale());
@@ -363,12 +388,14 @@
     [this.current, w && w.old].forEach(m => {
       if (!m || !m.parent) return;
       const u = m.userData;
-      const spin = -(0.06 + this.dir * this.speed * 0.9);
+      const spin = -(0.06 + this.dir * this.speed * 0.9) + (m === this.current ? this.nudge : 0);
       u.minute.rotation.z += dt * spin;
       u.hour.rotation.z += (dt * spin) / 12;
       u.dial.rotation.z += dt * (0.03 - this.dir * this.speed * 0.05);
       u.arms[0].rotation.z += dt * 0.25; u.arms[1].rotation.z -= dt * 0.18;
+      if (u.pop > 0.001) { u.pop *= Math.exp(-dt * 4); u.glow.scale.setScalar(26 * (1 + 0.3 * u.pop)); }
     });
+    this.nudge *= Math.exp(-dt * 3);
     if (this.current && !w) {
       this.scrollSmooth += (this.scroll - this.scrollSmooth) * Math.min(1, dt * 4);
       const r = this._restPos();

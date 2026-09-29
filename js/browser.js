@@ -3,11 +3,10 @@
    reload, and every portfolio page with its interactive features.
    ========================================================================== */
 (function () {
-  // the content in the current language (English or Arabic), always up to date
+  // the portfolio content, always up to date
   const C = new Proxy({}, { get: (_, k) => window.I18N.content()[k] });
   const t = (s, v) => window.I18N.t(s, v);
-  const isAr = () => window.I18N.lang === "ar";
-  const joinList = a => (a.length < 2 ? a.join("") : a.slice(0, -1).join(isAr() ? "، " : ", ") + (isAr() ? " و" : " and ") + a[a.length - 1]);
+  const joinList = a => (a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]);
   const A = window.ASSETS;
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -36,13 +35,19 @@
   const YEAR = new Date().getFullYear();
   const ERA = {
     education:  { n: 2009, label: "2009" },
-    experience: { n: 2012, label: "2012" },
+    experience: { n: YEAR - 0.5, label: String(YEAR) }, // opens on the latest role; the clock then follows the scroll
     projects:   { n: 2017, label: "2017" },
     resume:     { n: 2023, label: "2023" },
     home:       { n: YEAR, label: "NOW" },
     contact:    { n: YEAR + 1, label: "NEXT" },
     blog:       { n: YEAR + 40, label: "∞" },
     notfound:   { n: null, label: "????" }
+  };
+  // "2019 – 2023" → { from: 2019, to: 2023 }; "Present" is this year
+  const roleYears = x => {
+    const ys = (String(x.years).match(/\d{4}/g) || []).map(Number);
+    const from = ys[0] || YEAR;
+    return { from, to: /present|now|current/i.test(x.years) ? YEAR : ys[1] || from };
   };
   const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const pkey = p => p.key || slug(p.title);
@@ -81,7 +86,11 @@
     db: '<ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13"/><path d="M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>',
     async: '<path d="M4 7h11"/><path d="M12 4l3 3-3 3"/><path d="M20 17H9"/><path d="M12 14l-3 3 3 3"/>',
     infra: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
-    shield: '<path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/>'
+    shield: '<path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+    node: '<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/><path d="M12 10v4"/>',
+    dapp: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 8l4 2.3v4.4L12 17l-4-2.3v-4.4z"/>',
+    builder: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 13h5M8 16h3"/><path d="M17 12.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/>',
+    mobile: '<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/>'
   };
   const icon = (n, cls = "") => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${P[n] || ""}</svg>`;
 
@@ -214,6 +223,11 @@
 
   // ---------- pages ----------
   const tags = arr => `<ul class="tags">${arr.map(t => `<li>${esc(t)}</li>`).join("")}</ul>`;
+  // the applications of a project that is an ecosystem (Egety)
+  const ecosystem = (p, compact) => p.apps && p.apps.length ? `
+    <ul class="eco${compact ? " compact" : ""}">${p.apps.map(a => `
+      <li><span class="eco-ico">${icon(a.icon)}</span><span class="eco-txt"><strong>${esc(a.name)}</strong><small>${esc(a.kind)}</small>${compact ? "" : `<span>${esc(a.text)}</span>`}</span></li>`).join("")}
+    </ul>` : "";
   const projDates = p => { const d = [p.start, p.end].filter(Boolean); return d.length ? (d[0] === d[1] ? d[0] : d.join(" – ")) : ""; };
   const expName = id => {
     const x = C.experience.find(e => e.id === id);
@@ -274,7 +288,7 @@
         <ol class="cert-list">
           ${e.certificates.map(c => `
             <li>
-              <div><h3>${esc(c.title)}</h3><p class="muted">${esc([c.issuer, c.date].filter(Boolean).join(isAr() ? "\u060c " : ", "))}</p></div>
+              <div><h3>${esc(c.title)}</h3><p class="muted">${esc([c.issuer, c.date].filter(Boolean).join(", "))}</p></div>
               ${c.id ? `<button class="chip-btn" type="button" data-copy="${esc(c.id)}" aria-label="${esc(t("Copy credential ID {id}", { id: c.id }))}">${icon("copy")}<span dir="ltr">${esc(c.id)}</span></button>` : ""}
             </li>`).join("")}
         </ol>
@@ -288,6 +302,7 @@
           <li>
             <button type="button" class="proj-link" data-goto-proj="${pkey(p)}" aria-label="${esc(t("Open project {name}", { name: p.title }))}"><span>${esc(p.title)}</span><small>${esc(projDates(p))}</small></button>
             <p>${esc(p.desc)}</p>
+            ${ecosystem(p, true)}
             ${tags(p.tech.slice(0, 5))}
           </li>`).join("")}
         </ul>` : "";
@@ -296,8 +311,8 @@
       return `
       <header class="page-head"><h1 class="display">${esc(t("Experience"))}</h1><p class="lede">${esc(t("From IT support to managing a blockchain team, with the projects behind each role."))}</p></header>
       <ol class="timeline">
-        ${C.experience.map(x => `
-          <li id="exp-${esc(x.id)}">
+        ${C.experience.map(x => { const yr = roleYears(x); return `
+          <li id="exp-${esc(x.id)}" data-from="${yr.from}" data-to="${yr.to}">
             <p class="when">${esc(x.years)}</p>
             <div class="panel">
               <h2>${esc(x.role)}</h2>
@@ -305,7 +320,7 @@
               <ul class="points">${x.points.map(p => `<li>${esc(p)}</li>`).join("")}</ul>
               ${projList(of(x.id), t("Projects in this role"))}
             </div>
-          </li>`).join("")}
+          </li>`; }).join("")}
       </ol>
       ${ind && of(ind.id).length ? `
       <section class="panel" id="exp-${esc(ind.id)}">
@@ -366,7 +381,6 @@
           <button class="btn primary" type="button" data-action="download-cv">${icon("download")}${esc(t("Download CV"))}</button>
           <button class="btn" type="button" id="cv-toggle" aria-expanded="false" aria-controls="cv-view">${icon("eye")}${esc(t("View CV"))}</button>
         </div>
-        ${isAr() ? `<p class="muted cv-note">${esc(t("The CV is currently available in English."))}</p>` : ""}
       </header>
       <section id="cv-view" class="panel cv-view" hidden></section>
       <div class="resume-grid">
@@ -477,7 +491,7 @@
       const q = root.querySelector("#proj-q");
       const chips = [...root.querySelectorAll(".chip[data-tech]")];
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const countText = n => !isAr() ? `${n} ${n === 1 ? "project" : "projects"}` : n === 1 ? "\u0645\u0634\u0631\u0648\u0639 \u0648\u0627\u062d\u062f" : n === 2 ? "\u0645\u0634\u0631\u0648\u0639\u0627\u0646" : n <= 10 ? `${n} \u0645\u0634\u0627\u0631\u064a\u0639` : `${n} \u0645\u0634\u0631\u0648\u0639\u064b\u0627`;
+      const countText = n => `${n} ${n === 1 ? "project" : "projects"}`;
 
       const draw = () => {
         const list = C.projects.filter(p =>
@@ -503,13 +517,14 @@
                   ${meta.length ? `<p class="meta">${meta.map(m => `<span>${esc(m)}</span>`).join("")}</p>` : ""}
                   ${roleBadge(p)}
                   ${p.desc ? `<h3>${esc(t("Description"))}</h3><p>${esc(p.desc)}</p>` : ""}
+                  ${p.apps && p.apps.length ? `<h3>${esc(t("Ecosystem"))}</h3>${ecosystem(p)}` : ""}
                   ${p.tasks && p.tasks.length ? `<h3>${esc(t("Tasks"))}</h3><ul class="points">${p.tasks.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
                   <div class="tag-row">${p.tech.map(x => `<button type="button" class="tag${state.tech.has(x) ? " on" : ""}" data-tech-add="${esc(x)}" aria-label="${esc(t("Filter by {name}", { name: x }))}">${esc(x)}</button>`).join("")}</div>
                 </div>
                 <button type="button" class="pg-close" aria-label="${esc(t("Close"))}">${icon("close")}</button>
               </div>
               <button type="button" class="pg pg-cover" aria-expanded="false" aria-controls="pg-${key}" aria-label="${esc(t("Open project {name}", { name: p.title }))}">
-                <span class="cover" style="--h:${p.hue}" aria-hidden="true"><span>${esc(initials)}</span></span>
+                <span class="cover${p.logo ? " has-logo" : ""}" style="--h:${p.hue}" aria-hidden="true">${p.logo && A[p.logo] ? `<img class="cover-logo" src="${A[p.logo]}" alt="">` : `<span>${esc(initials)}</span>`}</span>
                 <span class="cover-info">
                   <span class="cv-title">${esc(p.title)}</span>
                   ${meta.length ? `<span class="cv-meta">${esc(meta.join(" \u00b7 "))}</span>` : ""}
@@ -717,7 +732,6 @@
             <label class="sr" for="addr" data-i18n="Address">${esc(t("Address"))}</label>
             <input id="addr" type="text" dir="ltr" spellcheck="false" autocomplete="off" autocapitalize="off" enterkeyhint="go">
           </form>
-          <button type="button" class="tool lang-btn" id="lang-btn" data-i18n-label="Switch language" aria-label="${esc(t("Switch language"))}"><span data-lang-label>${esc(window.I18N.langLabel())}</span></button>
           <button type="button" class="tool desk-btn" data-desk data-i18n-label="Back to the desk" aria-label="${esc(t("Back to the desk"))}">${icon("desk")}<span data-i18n="Desk">${esc(t("Desk"))}</span></button>
         </div>
         <div class="progress" aria-hidden="true"></div>
@@ -738,7 +752,6 @@
       if (ge) { e.preventDefault(); this.go("experience", { focus: "exp-" + ge.dataset.gotoExp }); return; }
       const gp = e.target.closest("[data-goto-proj]");
       if (gp) { e.preventDefault(); this.go("projects", { focus: "proj-" + gp.dataset.gotoProj }); return; }
-      if (e.target.closest("#lang-btn")) { window.I18N.set(isAr() ? "en" : "ar"); return; }
       if (e.target.closest("[data-desk]")) { e.preventDefault(); this.hooks.onDesk(); return; }
       const cp = e.target.closest("[data-copy]");
       if (cp) { copyText(cp.dataset.copy); return; }
@@ -775,6 +788,7 @@
         const p = max > 0 ? this.viewport.scrollTop / max : 0;
         this.progress.style.transform = `scaleX(${p})`;
         this.hooks.onScroll && this.hooks.onScroll(p);
+        if (this.shown && this.shown.key === "experience") this._expYear();
       });
     }, { passive: true });
   };
@@ -803,6 +817,35 @@
     this.viewport.scrollTop = 0;
     this.progress.style.transform = "scaleX(0)";
     this.hooks.onScroll && this.hooks.onScroll(0);
+    if (entry.key === "experience") this._expYear(true);
+  };
+
+  /* Experience: the era clock shows the year of the role being read.
+     Reading down a role runs its years backwards (end year → start year). */
+  Browser.prototype._expYear = function (force) {
+    const items = [...this.page.querySelectorAll(".timeline > li[data-from]")];
+    if (!items.length) return;
+    const vp = this.viewport;
+    // not laid out yet (the browser is still hidden): measure once it is on screen
+    cancelAnimationFrame(this._expRetry);
+    if (!vp.clientHeight) { this._expRetry = requestAnimationFrame(() => { if (this.shown && this.shown.key === "experience") this._expYear(true); }); return; }
+    const line = vp.getBoundingClientRect().top + vp.clientHeight * 0.4;
+    let year = +items[0].dataset.to, active = 0;
+    for (let i = 0; i < items.length; i++) {
+      const r = items[i].getBoundingClientRect();
+      if (r.top > line) break;
+      active = i;
+      const k = Math.min(1, Math.max(0, (line - r.top) / Math.max(1, r.height)));
+      year = +items[i].dataset.to + (+items[i].dataset.from - +items[i].dataset.to) * k;
+    }
+    // at the very bottom, land on the first year of the career
+    if (vp.scrollTop >= vp.scrollHeight - vp.clientHeight - 2 && vp.scrollTop > 0) { active = items.length - 1; year = +items[active].dataset.from; }
+    items.forEach((li, i) => li.classList.toggle("now", i === active));
+    const y = Math.round(year);
+    if (y === this._year && !force) return;
+    const dir = this._year == null || force ? 0 : y < this._year ? -1 : 1;
+    this._year = y;
+    this.hooks.onYear && this.hooks.onYear("experience", String(y), dir);
   };
 
   // navigation with the time-travel transition
@@ -907,6 +950,8 @@
     window.I18N.applyStatic();
     if (this.current) { this._render(this.current); this.viewport.scrollTop = sc; this._syncChrome(); }
   };
+
+  Browser.prototype.refreshYear = function () { if (this.shown && this.shown.key === "experience") this._expYear(true); };
 
   Browser.resolveRoute = resolveRoute;
   Browser.ROUTES = ROUTES;

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Georges Matta — Portfolio</title>
+<meta name="description" content="Georges Matta, senior developer and project manager: Go and Python backends, blockchain, and intelligence & data tooling. BSc Computer Science.">
+<meta name="theme-color" content="#070b1a">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪐</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<!-- VENDOR_START -->
+<script>
+  window.VENDOR = {
+    pdf: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js",
+    pdfWorker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"
+  };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- VENDOR_END -->
+</head>
+<body>
+  <canvas id="scene" aria-label="A desk at night with a laptop, a lamp, an hourglass and a window full of stars"></canvas>
+
+  <div id="loader" role="status"><p><span class="dot"></span>Setting up the desk</p></div>
+
+  <section id="intro" class="intro" aria-label="Welcome">
+    <div class="intro-card">
+      <p class="intro-name">Georges Matta</p>
+      <p class="intro-role">Senior developer &amp; project manager</p>
+      <div class="actions">
+        <button id="enter-btn" class="btn primary" type="button">Step inside</button>
+        <button id="skip-btn" class="link-btn" type="button">Skip the intro</button>
+      </div>
+      <p class="hint">Or tap the laptop screen</p>
+    </div>
+  </section>
+
+  <div id="browser" class="browser" hidden aria-hidden="true"></div>
+  <div id="veil" aria-hidden="true"></div>
+
+  <noscript><p style="padding:24px">This portfolio needs JavaScript. Contact: testdevleb@gmail.com</p></noscript>
+
+  <script src="js/content.js"></script>
+  <script src="js/desk-scene.js"></script>
+  <script src="js/time-scene.js"></script>
+  <script src="js/browser.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

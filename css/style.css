@@ -459,7 +459,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .skills-chart { display: grid; gap: 20px; position: relative; }
 .skill-cat h3 { color: var(--amber-soft); font-size: 15px; margin-bottom: 8px; }
 .bars { display: grid; gap: 6px; }
-.bar { display: grid; grid-template-columns: minmax(120px, 220px) 1fr 44px; align-items: center; gap: 12px; padding: 4px 6px; border-radius: 8px; cursor: default; }
+.bar { display: grid; grid-template-columns: minmax(120px, 280px) 1fr 44px; align-items: center; gap: 12px; padding: 4px 6px; border-radius: 8px; cursor: default; }
 .bar:hover, .bar:focus-visible { background: rgba(234,230,218,.06); }
 .bar-name { font-size: 15px; }
 .bar-v { font-size: 14px; color: var(--dust); text-align: right; font-variant-numeric: tabular-nums; }

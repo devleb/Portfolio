@@ -245,7 +245,12 @@ window.CONTENT = {
     { cat: "Databases", items: [["PostgreSQL", 75], ["SQLite", 85], ["SQL Server", 80], ["MySQL", 70]] },
     { cat: "Blockchain", items: [["Go blockchain development", 75], ["Liquidity pool backends", 70], ["Node API integration", 70]] },
     { cat: "Data & intelligence", items: [["pandas / EDA", 85], ["Visualization (Plotly, Power BI)", 80], ["Web scraping & automation", 90], ["OSINT tooling", 80], ["Local LLMs / RAG", 60]] },
-    { cat: "Tools", items: [["Git", 70], ["Linux", 70], ["VS Code / code-server", 85], ["Locust load testing", 65], ["Jupyter / Colab", 90]] }
+    { cat: "Tools", items: [["Git", 70], ["Linux", 70], ["VS Code / code-server", 85], ["Locust load testing", 65], ["Jupyter / Colab", 90]] },
+    /* Management: `group` puts these four cards under one "Management" chip in the filter. */
+    { cat: "Planning & delivery", group: "Management", items: [["Project planning", 90], ["Task breakdown", 85], ["Milestone & delivery tracking", 87], ["ClickUp", 90]] },
+    { cat: "Team leadership", group: "Management", items: [["Team leadership", 90], ["Task assignment", 90], ["Cross-team coordination (backend, DApp, AI builder, mobile)", 85]] },
+    { cat: "Requirements & stakeholders", group: "Management", items: [["Specification review", 80], ["Gap analysis", 85], ["Client clarification", 90]] },
+    { cat: "Quality & risk", group: "Management", items: [["Load-test coordination", 85], ["Postmortems", 75], ["Disaster recovery planning", 85]] }
   ],
 
   languages: [

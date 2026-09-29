@@ -374,7 +374,7 @@
     },
 
     resume() {
-      const cats = C.skills.map(s => s.cat);
+      const cats = [...new Set(C.skills.map(s => s.group || s.cat))];
       return `
       <header class="page-head"><h1 class="display">${esc(t("Resume"))}</h1>
         <div class="actions">
@@ -658,7 +658,7 @@
       const level = v => (v >= 85 ? 5 : v >= 75 ? 4 : v >= 65 ? 3 : 2);
       let cat = "all";
       const draw = () => {
-        chart.innerHTML = C.skills.filter(s => cat === "all" || s.cat === cat).map(s => `
+        chart.innerHTML = C.skills.filter(s => cat === "all" || (s.group || s.cat) === cat).map(s => `
           <div class="skill-cat">
             <h3>${esc(s.cat)}</h3>
             <div class="bars">${s.items.map(([n, v]) => `

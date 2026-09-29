@@ -283,10 +283,10 @@ window.CONTENT = {
       { name: "Postmortems" } ] }
   ],
 
-  /* Delivery chain: the centrepiece of the Home page. One block is "mined" per step, phase by phase.
-     Change the names, the number of blocks per phase or the colours here. */
+  /* Delivery roadmap: the centrepiece of the Home page, a dial that fills up one step at a time, phase by phase.
+     Change the names, the number of steps per phase (`blocks`) or the colours here. */
   delivery: {
-    title: "Delivery chain",
+    title: "Delivery roadmap",
     phases: [
       { name: "Spec", blocks: 3, color: "#f2a541" },
       { name: "Build", blocks: 4, color: "#7cc7b4" },

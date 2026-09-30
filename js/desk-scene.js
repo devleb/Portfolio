@@ -339,7 +339,7 @@
   }
 
   // ======================================================================
-  // ---------- props you can tap: the CV sheet and the Egety token ----------
+  // ---------- props you can tap: the CV sheet and the Dynamic Eye token ----------
   function cvSheetTexture(name, role) {
     return canvasTex(420, 594, (g, w, h) => {
       g.fillStyle = "#f7f3ea"; g.fillRect(0, 0, w, h);
@@ -629,35 +629,35 @@
     this.cvRest = { x: 0.25, y: DESK_Y + 0.001, z: 0.45, ry: 0.12 };
     this.cvAnim = null; this.cvBusy = false;
 
-    // --- Egety token (the project's hexagon logo) on a little stand: tap it to see the project
+    // --- Dynamic Eye Technology token (the company's eye logo) on a little stand: tap it to see the project
     const coinBase = new T.Group(); coinBase.position.set(-0.4, DESK_Y, -0.26); s.add(coinBase);
-    const brass2 = new T.MeshStandardMaterial({ color: "#6f7f99", metalness: 0.8, roughness: 0.3 });
-    const cBase = new T.Mesh(new T.CylinderGeometry(0.03, 0.034, 0.008, 6), brass2); cBase.position.y = 0.004; cBase.castShadow = true; coinBase.add(cBase);
+    const brass2 = new T.MeshStandardMaterial({ color: "#7d6a92", metalness: 0.8, roughness: 0.3 });
+    const cBase = new T.Mesh(new T.CylinderGeometry(0.03, 0.034, 0.008, 32), brass2); cBase.position.y = 0.004; cBase.castShadow = true; coinBase.add(cBase);
     const cPost = new T.Mesh(new T.CylinderGeometry(0.0025, 0.0025, 0.07, 8), brass2); cPost.position.y = 0.043; coinBase.add(cPost);
     const coinSpin = new T.Group(); coinSpin.position.y = 0.106; coinBase.add(coinSpin);
     const R = 0.046, DEPTH = 0.008;
-    // hexagonal body, pointy top like the logo
-    const rimMat = new T.MeshStandardMaterial({ color: "#0e2a52", metalness: 0.75, roughness: 0.3, emissive: "#0b5fa8", emissiveIntensity: 0.35 });
-    const hexBody = new T.Mesh(new T.CylinderGeometry(R * 0.97, R * 0.97, DEPTH, 6), rimMat);
-    hexBody.rotation.x = Math.PI / 2; hexBody.castShadow = true; coinSpin.add(hexBody);
-    // the logo on both faces; it glows a little, like the icon
-    const logoTex = new T.TextureLoader().load(window.ASSETS.egety);
+    // round body with a purple metal rim
+    const rimMat = new T.MeshStandardMaterial({ color: "#5d2a7f", metalness: 0.75, roughness: 0.3, emissive: "#6a1b8f", emissiveIntensity: 0.25 });
+    const coinBody = new T.Mesh(new T.CylinderGeometry(R, R, DEPTH, 48), rimMat);
+    coinBody.rotation.x = Math.PI / 2; coinBody.castShadow = true; coinSpin.add(coinBody);
+    // the logo on both faces (a light disc, so the purple stays readable)
+    const logoTex = new T.TextureLoader().load(window.ASSETS.eyeToken);
     logoTex.encoding = T.sRGBEncoding; logoTex.anisotropy = 8;
-    const faceMat = new T.MeshStandardMaterial({ map: logoTex, emissiveMap: logoTex, emissive: "#ffffff", emissiveIntensity: 0.75, metalness: 0.3, roughness: 0.35, transparent: true, alphaTest: 0.05 });
-    const faceGeo = new T.PlaneGeometry(2 * R * (82 / 96), 2 * R);
+    const faceMat = new T.MeshStandardMaterial({ map: logoTex, emissiveMap: logoTex, emissive: "#ffffff", emissiveIntensity: 0.3, metalness: 0.15, roughness: 0.4 });
+    const faceGeo = new T.CircleGeometry(R * 0.93, 64);
     [1, -1].forEach(side => {
       const f = new T.Mesh(faceGeo, faceMat);
       f.position.z = side * (DEPTH / 2 + 0.0004); if (side < 0) f.rotation.y = Math.PI;
       coinSpin.add(f);
     });
-    // soft blue halo behind the token
+    // soft purple halo behind the token
     const haloTex = canvasTex(128, 128, (g, w) => {
       const gr = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
-      gr.addColorStop(0, "rgba(70,190,255,.55)"); gr.addColorStop(0.45, "rgba(40,140,255,.16)"); gr.addColorStop(1, "rgba(40,140,255,0)");
+      gr.addColorStop(0, "rgba(190,90,230,.5)"); gr.addColorStop(0.45, "rgba(150,60,200,.15)"); gr.addColorStop(1, "rgba(150,60,200,0)");
       g.fillStyle = gr; g.fillRect(0, 0, w, w);
     });
     const halo = new T.Sprite(new T.SpriteMaterial({ map: haloTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
-    halo.scale.setScalar(0.2); coinSpin.add(halo);
+    halo.scale.setScalar(0.2); halo.position.z = -0.02; coinSpin.add(halo);
     const coinHit = new T.Mesh(new T.CylinderGeometry(0.065, 0.065, 0.14, 12), new T.MeshBasicMaterial({ visible: false }));
     coinHit.position.y = 0.09; coinHit.userData.prop = "coin"; coinBase.add(coinHit);
     this.coin = { group: coinBase, spin: coinSpin, boost: 0 }; this.coinHit = coinHit;

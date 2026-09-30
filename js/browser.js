@@ -89,10 +89,9 @@
     async: '<path d="M4 7h11"/><path d="M12 4l3 3-3 3"/><path d="M20 17H9"/><path d="M12 14l-3 3 3 3"/>',
     infra: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
     shield: '<path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
-    node: '<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/><path d="M12 10v4"/>',
-    dapp: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 8l4 2.3v4.4L12 17l-4-2.3v-4.4z"/>',
-    builder: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 13h5M8 16h3"/><path d="M17 12.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/>',
-    mobile: '<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/>'
+    mobile: '<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/>',
+    web: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3.4 3 14.6 0 18M12 3c-3 3.4-3 14.6 0 18"/>',
+    ai: '<rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 3.5v3M14 3.5v3M10 17.5v3M14 17.5v3M3.5 10h3M3.5 14h3M17.5 10h3M17.5 14h3"/><path d="M10.5 12h3"/>'
   };
   const icon = (n, cls = "") => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${P[n] || ""}</svg>`;
 
@@ -225,8 +224,8 @@
 
   // ---------- pages ----------
   const tags = arr => `<ul class="tags">${arr.map(t => `<li>${esc(t)}</li>`).join("")}</ul>`;
-  // the applications of a project that is an ecosystem (Egety)
-  const ecosystem = (p, compact) => p.apps && p.apps.length ? `
+  // the tiles of a project with several areas of work (Dynamic Eye Technology: web, mobile, AI)
+  const areaTiles = (p, compact) => p.apps && p.apps.length ? `
     <ul class="eco${compact ? " compact" : ""}">${p.apps.map(a => `
       <li><span class="eco-ico">${icon(a.icon)}</span><span class="eco-txt"><strong>${esc(a.name)}</strong><small>${esc(a.kind)}</small>${compact ? "" : `<span>${esc(a.text)}</span>`}</span></li>`).join("")}
     </ul>` : "";
@@ -304,14 +303,14 @@
           <li>
             <button type="button" class="proj-link" data-goto-proj="${pkey(p)}" aria-label="${esc(t("Open project {name}", { name: p.title }))}"><span>${esc(p.title)}</span><small>${esc(projDates(p))}</small></button>
             <p>${esc(p.desc)}</p>
-            ${ecosystem(p, true)}
+            ${areaTiles(p, true)}
             ${tags(p.tech.slice(0, 5))}
           </li>`).join("")}
         </ul>` : "";
       const of = id => C.projects.filter(p => p.exp === id);
       const ind = C.independent;
       return `
-      <header class="page-head"><h1 class="display">${esc(t("Experience"))}</h1><p class="lede">${esc(t("From IT support to managing a blockchain team, with the projects behind each role."))}</p></header>
+      <header class="page-head"><h1 class="display">${esc(t("Experience"))}</h1><p class="lede">${esc(t("From IT support to managing projects in web, mobile and AI, with the projects behind each role."))}</p></header>
       <ol class="timeline">
         ${C.experience.map(x => { const yr = roleYears(x); return `
           <li id="exp-${esc(x.id)}" data-from="${yr.from}" data-to="${yr.to}">
@@ -519,7 +518,7 @@
                   ${meta.length ? `<p class="meta">${meta.map(m => `<span>${esc(m)}</span>`).join("")}</p>` : ""}
                   ${roleBadge(p)}
                   ${p.desc ? `<h3>${esc(t("Description"))}</h3><p>${esc(p.desc)}</p>` : ""}
-                  ${p.apps && p.apps.length ? `<h3>${esc(t("Ecosystem"))}</h3>${ecosystem(p)}` : ""}
+                  ${p.apps && p.apps.length ? `<h3>${esc(t(p.appsTitle || "Areas of work"))}</h3>${areaTiles(p)}` : ""}
                   ${p.tasks && p.tasks.length ? `<h3>${esc(t("Tasks"))}</h3><ul class="points">${p.tasks.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
                   <div class="tag-row">${p.tech.map(x => `<button type="button" class="tag${state.tech.has(x) ? " on" : ""}" data-tech-add="${esc(x)}" aria-label="${esc(t("Filter by {name}", { name: x }))}">${esc(x)}</button>`).join("")}</div>
                 </div>

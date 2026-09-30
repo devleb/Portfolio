@@ -149,7 +149,7 @@
   function ndc(e) { return { x: (e.clientX / window.innerWidth) * 2 - 1, y: -(e.clientY / window.innerHeight) * 2 + 1 }; }
 
   // a small label that names whatever the pointer is over on the desk
-  const PROP_TIP = { hourglass: "Flip the hourglass", cv: "Open my CV", coin: "See the Egety ecosystem" };
+  const PROP_TIP = { hourglass: "Flip the hourglass", cv: "Open my CV", coin: "See Dynamic Eye Technology" };
   const tip = document.createElement("div");
   tip.className = "prop-tip"; tip.hidden = true; tip.setAttribute("aria-hidden", "true");
   document.body.appendChild(tip);
@@ -178,7 +178,7 @@
     const prop = desk.pickProp(p.x, p.y);
     if (prop === "hourglass") desk.flipHourglass();
     else if (prop === "cv") desk.raiseCv().then(() => enterBrowser({ route: "resume", action: "open-cv", fromCv: true }));   // the sheet lifts and flips first
-    else if (prop === "coin") { desk.spinCoin(); enterBrowser({ route: "projects", focus: "proj-egety-blockchain" }); }
+    else if (prop === "coin") { desk.spinCoin(); enterBrowser({ route: "projects", focus: "proj-dynamic-eye-technology" }); }
   });
   canvas.addEventListener("pointerleave", () => { tip.hidden = true; if (desk) desk.setHoverProp(null); });
 

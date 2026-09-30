@@ -8,7 +8,8 @@ window.ASSETS = {
   blog1: "assets/img/blog-data-analysis.jpg",
   cv: "assets/cv/Georges-Matta-CV.pdf",
   cvFileName: "Georges-Matta-CV.pdf",
-  egety: "assets/img/egety.webp"
+  eye: "assets/img/dynamic-eye.webp",
+  eyeToken: "assets/img/dynamic-eye-token.webp"
 };
 
 window.CONTENT = {
@@ -20,7 +21,7 @@ window.CONTENT = {
     email: "testdevleb@gmail.com",
     since: 2012,
     intro:
-      "I build backends in Go and Python, blockchain infrastructure, and intelligence tools that turn scattered data into clear decisions. I hold a BSc in Computer Science and currently manage the team behind the Egety blockchain.",
+      "I build backends in Go and Python, blockchain infrastructure, and intelligence tools that turn scattered data into clear decisions. I hold a BSc in Computer Science and currently manage projects at Dynamic Eye Technology across web development, mobile development and AI solutions.",
     focus: [
       {
         title: "Backend systems",
@@ -29,7 +30,7 @@ window.CONTENT = {
       },
       {
         title: "Blockchain",
-        text: "The Egety ecosystem: a custom Go blockchain with its full node, a DApp, an AI website builder and a mobile app, plus liquidity pool and mining backends.",
+        text: "Go blockchain development, liquidity pool backends and node API integrations.",
         tech: ["Go", "SQLite", "Locust"]
       },
       {
@@ -66,15 +67,13 @@ window.CONTENT = {
   experience: [
     {
       id: "pm",
-      role: "Project Manager — Egety blockchain",
+      role: "Project Manager — Dynamic Eye Technology",
       years: "2024 – Present",
-      text: "Leading the team that builds Egety, a full blockchain ecosystem around a custom blockchain written in Go, from technical specification to delivery.",
+      text: "Project manager for multiple projects at Dynamic Eye Technology, across web development, mobile development and AI solutions.",
       points: [
         "Own the project plan, task breakdown and delivery across the team.",
-        "Deliver the ecosystem's four applications: the backend full node, the DApp, the AI website builder and the mobile app.",
-        "Review technical specifications, run gap analysis and turn open questions into clear client clarifications.",
-        "Oversee the Go backend work: liquidity pool, mining services and node API integrations.",
-        "Coordinate load testing with Locust."
+        "Manage several projects at once across web development, mobile development and AI solutions.",
+        "Review technical specifications, run gap analysis and turn open questions into clear client clarifications."
       ]
     },
     {
@@ -126,23 +125,23 @@ window.CONTENT = {
   /* Projects: leave a field empty ("") to hide it on the card. */
   projects: [
     {
-      title: "Egety blockchain",
-      key: "egety-blockchain",
-      logo: "egety",
+      title: "Dynamic Eye Technology",
+      key: "dynamic-eye-technology",
+      logo: "eye",
       exp: "pm",
       start: "2024", end: "Present",
-      tech: ["Go", "SQLite", "Locust", "NowNodes API"],
+      tech: [],
       role: "Project manager",
-      desc: "A full blockchain ecosystem built around a custom blockchain written in Go with a fixed 10M coin supply. Four applications work together on the chain: a backend full node, a DApp, a website builder with AI and a mobile application.",
-      /* Ecosystem: the applications that make up the project. icon: node, dapp, builder or mobile. */
+      desc: "Project manager for multiple projects at Dynamic Eye Technology, across web development, mobile development and AI solutions.",
+      /* Areas of work, shown as tiles. icon: web, mobile or ai. */
+      appsTitle: "Areas of work",
       apps: [
-        { name: "Full node", kind: "Backend", icon: "node", text: "The Go backend that runs the Egety chain, with the liquidity pool and LTC mining services and the node API integrations." },
-        { name: "DApp", kind: "Decentralized app", icon: "dapp", text: "The decentralized application for using Egety on-chain from the browser." },
-        { name: "Website builder", kind: "With AI", icon: "builder", text: "A website builder with AI assistance, part of the Egety ecosystem." },
-        { name: "Mobile app", kind: "Mobile application", icon: "mobile", text: "The Egety ecosystem on the phone." }
+        { name: "Web development", kind: "Projects managed", icon: "web", text: "Web projects, managed from plan to delivery." },
+        { name: "Mobile development", kind: "Projects managed", icon: "mobile", text: "Mobile application projects, managed from plan to delivery." },
+        { name: "AI solutions", kind: "Projects managed", icon: "ai", text: "AI solution projects, managed from plan to delivery." }
       ],
-      tasks: ["Technical specification review and gap analysis", "Delivery of the full node, DApp, AI website builder and mobile app", "Liquidity pool and mining services", "Node API integration", "Load testing with Locust"],
-      hue: 205
+      tasks: ["Project planning and task breakdown", "Technical specification review and gap analysis", "Delivery across web, mobile and AI projects"],
+      hue: 285
     },
     {
       title: "Market data tracker",
@@ -248,7 +247,7 @@ window.CONTENT = {
     { cat: "Tools", items: [["Git", 70], ["Linux", 70], ["VS Code / code-server", 85], ["Locust load testing", 65], ["Jupyter / Colab", 90]] },
     /* Management: `group` puts these four cards under one "Management" chip in the filter. */
     { cat: "Planning & delivery", group: "Management", items: [["Project planning", 90], ["Task breakdown", 85], ["Milestone & delivery tracking", 87], ["ClickUp", 90]] },
-    { cat: "Team leadership", group: "Management", items: [["Team leadership", 90], ["Task assignment", 90], ["Cross-team coordination (backend, DApp, AI builder, mobile)", 85]] },
+    { cat: "Team leadership", group: "Management", items: [["Team leadership", 90], ["Task assignment", 90], ["Cross-team coordination (web, mobile, AI)", 85]] },
     { cat: "Requirements & stakeholders", group: "Management", items: [["Specification review", 80], ["Gap analysis", 85], ["Client clarification", 90]] },
     { cat: "Quality & risk", group: "Management", items: [["Load-test coordination", 85], ["Postmortems", 75], ["Disaster recovery planning", 85]] }
   ],

@@ -185,6 +185,49 @@ button, input, textarea { font: inherit; color: inherit; }
 .page.arrived { animation: arrive .75s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes arrive { from { opacity: 0; transform: scale(.9) translateY(24px); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
 
+/* ---------- travel by scrolling ---------- */
+.viewport { --dive: 0; }
+/* The page leans into your push. It grows from the edge you are pushing against (the bottom when going
+   deeper, the top when coming back), so the scrollable area never changes while you push. */
+.page { scale: calc(1 + var(--dive) * .03); }
+.viewport[data-push="down"] .page { transform-origin: 50% 100%; }
+.viewport[data-push="up"] .page { transform-origin: 50% 0; }
+.browser[data-dive="down"] .page.leaving { transform: scale(1.1) translateY(-14px); }
+.browser[data-dive="up"] .page.leaving { transform: scale(.92) translateY(14px); }
+.browser[data-dive="down"] .page.arrived { animation-name: arrive-down; }
+.browser[data-dive="up"] .page.arrived { animation-name: arrive-up; }
+@keyframes arrive-down { from { opacity: 0; transform: scale(.88) translateY(28px); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes arrive-up { from { opacity: 0; transform: scale(1.1) translateY(-28px); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+
+.dive {
+  position: absolute; left: 50%; z-index: 7; bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  display: grid; gap: 7px; justify-items: center; max-width: calc(100% - 24px);
+  padding: 10px 18px 12px; border-radius: 16px; white-space: nowrap; font-size: 14px; color: var(--star);
+  background: rgba(10,14,30,.84); border: 1px solid rgba(242,165,65,.35);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  opacity: 0; transform: translate(-50%, 12px); pointer-events: none; transition: opacity .25s ease, transform .25s ease;
+}
+.dive.on { opacity: 1; transform: translate(-50%, 0); }
+.dive.up { bottom: auto; top: calc(var(--chrome-h, 104px) + 14px); transform: translate(-50%, -12px); }
+.dive.up.on { transform: translate(-50%, 0); }
+.dive-msg b { color: var(--amber-soft); font-weight: 600; }
+.dive-bar { width: 190px; max-width: 60vw; height: 4px; border-radius: 4px; background: rgba(234,230,218,.14); overflow: hidden; }
+.dive-bar i { display: block; height: 100%; transform: scaleX(0); transform-origin: left; background: linear-gradient(90deg, var(--amber), var(--signal)); }
+.dive.hint .dive-bar { display: none; }
+.dive.hint .dive-msg::after { content: " \2193"; display: inline-block; color: var(--amber); animation: dive-nudge 1.4s ease-in-out infinite; }
+@keyframes dive-nudge { 50% { transform: translateY(3px); } }
+
+.depth { display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px; margin-right: 2px; border-radius: 999px; background: rgba(234,230,218,.05); color: var(--dust); font-size: 14px; white-space: nowrap; }
+.depth[hidden] { display: none; }
+.depth small { font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; }
+.depth-dots { display: inline-flex; align-items: center; gap: 5px; }
+.depth-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(234,230,218,.2); transition: background .3s, transform .3s, box-shadow .3s; }
+.depth-dots i.seen { background: rgba(242,165,65,.5); }
+.depth-dots i.now { background: var(--amber); transform: scale(1.5); box-shadow: 0 0 8px rgba(242,165,65,.8); }
+.depth-num b { color: var(--star); font-weight: 600; }
+@media (max-width: 980px) { .depth small, .depth-dots { display: none; } }
+@media (max-width: 760px) { .depth { padding: 0 10px; gap: 0; } }
+
 /* ---------- type ---------- */
 .display { font-family: var(--display); font-weight: 600; font-size: clamp(38px, 6.2vw, 68px); line-height: 1.02; letter-spacing: -0.03em; margin: 0 0 14px; }
 .page h2 { font-family: var(--display); font-weight: 500; font-size: 22px; line-height: 1.25; letter-spacing: -0.01em; margin: 0 0 12px; }
@@ -511,6 +554,7 @@ button, input, textarea { font: inherit; color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-  .page.leaving { transform: none; filter: none; }
+  .page.leaving, .browser[data-dive] .page.leaving { transform: none; filter: none; }
+  .page { scale: none; }
 }
 

@@ -381,7 +381,7 @@
     this.hoverScreen = false;
     this.hgHover = false;
     this.hoverProp = null;
-    this.loc = { rtl: false, role: opts.role, tabs: ["Home", "Education", "Experience", "Projects", "Contact", "Resume", "Blog"], url: "devleb://home",
+    this.loc = { rtl: false, role: opts.role, tabs: ["Home", "Experience", "Resume", "Projects", "Education", "Contact", "Blog"], url: "devleb://home",
                  lines: ["Backend / Blockchain / Intelligence & data", "BSc Computer Science"], cta: "Step inside" };
     this._build();
     this._buildScreen();
@@ -619,13 +619,15 @@
     pen.rotation.z = Math.PI / 2; pen.rotation.y = 0.6; pen.position.set(0.51, DESK_Y + 0.013, 0.4); pen.castShadow = true; s.add(pen);
 
     // --- CV sheet: tap it to open the CV
-    const cvGroup = new T.Group(); cvGroup.position.set(0.25, DESK_Y + 0.001, 0.45); cvGroup.rotation.y = 0.12; s.add(cvGroup);
+    const cvGroup = new T.Group(); cvGroup.position.set(0.25, DESK_Y + 0.001, 0.45); cvGroup.rotation.order = "YXZ"; cvGroup.rotation.y = 0.12; s.add(cvGroup);
     const paper = new T.MeshStandardMaterial({ color: "#f3eee2", roughness: 0.9 });
     const sheet = new T.Mesh(new T.BoxGeometry(0.148, 0.002, 0.21), [paper, paper, new T.MeshStandardMaterial({ map: cvSheetTexture(this.profileName, this.role), roughness: 0.85 }), paper, paper, paper]);
     sheet.position.y = 0.001; sheet.castShadow = true; sheet.receiveShadow = true; cvGroup.add(sheet);
     const cvHit = new T.Mesh(new T.BoxGeometry(0.17, 0.03, 0.23), new T.MeshBasicMaterial({ visible: false }));
     cvHit.position.y = 0.012; cvHit.userData.prop = "cv"; cvGroup.add(cvHit);
-    this.cvGroup = cvGroup; this.cvHit = cvHit;
+    this.cvGroup = cvGroup; this.cvHit = cvHit; this.cvSheet = sheet;
+    this.cvRest = { x: 0.25, y: DESK_Y + 0.001, z: 0.45, ry: 0.12 };
+    this.cvAnim = null; this.cvBusy = false;
 
     // --- Egety token (the project's hexagon logo) on a little stand: tap it to see the project
     const coinBase = new T.Group(); coinBase.position.set(-0.4, DESK_Y, -0.26); s.add(coinBase);
@@ -824,8 +826,48 @@
     const c = this.coin;
     if (this.reduced) c.spin.rotation.y = 0.5;
     else { c.spin.rotation.y += dt * (0.9 + (this.hoverProp === "coin" ? 2.2 : 0) + c.boost); c.boost = Math.max(0, c.boost - dt * 6); }
-    const target = this.DESK_Y + 0.001 + (this.hoverProp === "cv" ? 0.014 : 0);
+    if (this.cvAnim) return this._stepCv(dt);
+    const target = this.DESK_Y + 0.001 + (this.hoverProp === "cv" && !this.cvBusy ? 0.014 : 0);
     this.cvGroup.position.y += (target - this.cvGroup.position.y) * (this.reduced ? 1 : 1 - Math.exp(-dt * 10));
+  };
+
+  /* Tapping the CV: the sheet lifts off the table, flips once and turns to face you, hovers for a moment
+     (the returned promise resolves then), and glides into the laptop screen as the camera flies in. */
+  const CV_RAISE = 1.0, CV_HOLD = 0.4, CV_SEND = 0.6;
+  DeskScene.prototype.raiseCv = function () {
+    return new Promise(resolve => {
+      this.cvBusy = true;
+      if (this.reduced) return resolve();          // no flourish: straight to the laptop
+      const mats = [...new Set([].concat(this.cvSheet.material))];
+      mats.forEach(m => { m.transparent = true; });
+      this.cvAnim = { t: 0, mats, resolve, resolved: false, from: null };
+    });
+  };
+  // the paper goes back on the table (called while the screen is covered)
+  DeskScene.prototype.resetCv = function () {
+    const r = this.cvRest, g = this.cvGroup;
+    this.cvAnim = null; this.cvBusy = false;
+    [].concat(this.cvSheet.material).forEach(m => { m.opacity = 1; m.transparent = false; });
+    g.visible = true; g.position.set(r.x, r.y, r.z); g.rotation.set(0, r.ry, 0); g.scale.setScalar(1);
+  };
+  DeskScene.prototype._stepCv = function (dt) {
+    const a = this.cvAnim, g = this.cvGroup, r = this.cvRest, Y = this.DESK_Y;
+    a.t += dt;
+    const UP = { x: 0.36, y: Y + 0.27, z: 0.55, rx: 1.2, ry: 0.07, s: 1.55 };   // hovering, facing the camera
+    if (a.t < CV_RAISE + CV_HOLD) {
+      const p = easeInOut(clamp(a.t / CV_RAISE, 0, 1)), float = a.t > CV_RAISE ? Math.sin((a.t - CV_RAISE) * 9) * 0.004 : 0;
+      g.position.set(r.x + (UP.x - r.x) * p, r.y + (UP.y - r.y) * p + Math.sin(Math.PI * p) * 0.04 + float, r.z + (UP.z - r.z) * p);
+      g.rotation.set(UP.rx * p, r.ry + (UP.ry - r.ry) * p, Math.PI * 2 * p);   // z: the flip, x: tilt towards you
+      g.scale.setScalar(1 + (UP.s - 1) * p);
+      return;
+    }
+    if (!a.resolved) { a.resolved = true; a.from = { pos: g.position.clone(), s: g.scale.x, rx: g.rotation.x }; a.resolve(); }
+    const k = clamp((a.t - CV_RAISE - CV_HOLD) / CV_SEND, 0, 1), e = k * k * (3 - 2 * k);
+    const scr = this.screen.getWorldPosition(new T.Vector3());
+    g.position.lerpVectors(a.from.pos, scr, e);
+    g.scale.setScalar(a.from.s * (1 - 0.65 * e));
+    a.mats.forEach(m => { m.opacity = 1 - clamp((k - 0.35) / 0.65, 0, 1); });
+    if (k >= 1) { g.visible = false; this.cvAnim = null; }   // stays away until resetCv()
   };
 
   // text drawn on the laptop screen

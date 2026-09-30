@@ -47,14 +47,25 @@ All text lives in **`js/content.js`**: profile, education, certificates, experie
 
 Each page is a moment in time, defined by `ERA` at the top of `js/browser.js`:
 
-| Page | Era | Page | Era |
-|---|---|---|---|
-| Education | 2009 | Home | NOW |
-| Experience | 2012 | Contact | NEXT |
-| Projects | 2017 | Blog | ∞ |
-| Resume | 2023 | | |
+The tabs, and the order you travel in when scrolling, run from now back to 2009 and then out to the future:
+
+| Order | Page | Era |
+|---|---|---|
+| 1 | Home | NOW |
+| 2 | Experience | 2026 → 2012 (follows the scroll) |
+| 3 | Resume | 2023 |
+| 4 | Projects | 2017 |
+| 5 | Education | 2009 |
+| 6 | Contact | NEXT |
+| 7 | Blog | ∞ |
+
+The order is the `ROUTES` list at the top of `js/browser.js`.
 
 Every page shows the **delivery roadmap dial**: a ring that fills up one step at a time (spec, build, test, ship), with that page's year on its face (NOW on Home). It is also on the laptop screen at the desk. Edit the phases, step counts and colours in `delivery` in `js/content.js`. On the Experience page the year follows the role being read as you scroll.
+
+**The CV on the desk.** Tapping the CV sheet lifts it off the table, flips it and holds it facing you for a moment, then it glides into the laptop screen and the browser opens on the Resume page with the CV viewer open. It goes back on the table when you return to the desk (with reduced motion it skips the flourish). The animation is `raiseCv` in `js/desk-scene.js`.
+
+**Travel by scrolling.** Keep scrolling past the end of a page and a small meter fills; when it is full you dive to the next page (in tab order). Scroll up past the top to come back, landing at the end of the earlier page. It works with the mouse wheel, touch swipes and the arrow / Page / Space keys. The toolbar shows where you are (Depth 3/7). Change `DIVE_PUSH` in `js/browser.js` to make the push shorter or longer.
 
 Switching tabs runs a year counter from one era to the other. The tunnel twists one way going back and the other way going forward. Change the years in `ERA` to whatever suits you.
 
@@ -72,6 +83,6 @@ js/main.js          ties it together (intro, enter/exit, input)
 
 ## Features kept from the Streamlit version
 
-Every page (Home, Education, Experience, Projects, Contact, Resume, Blog), the Education / Certificates tabs, project filters by technology and name, the interactive skills chart with hover details, CV download and in-page CV viewer, and all social and blog links.
+Every page (Home, Experience, Resume, Projects, Education, Contact, Blog), the Education / Certificates tabs, project filters by technology and name, the interactive skills chart with hover details, CV download and in-page CV viewer, and all social and blog links.
 
-New: the address bar accepts page names (`projects`, `cv`, `blogs`…), back / forward / reload, shareable links such as `yoursite/#/projects` that open directly on a page, a contact form that opens your email app, one-click copy for the email and credential IDs, a flippable hourglass, and a desk whose sky, light and weather follow the visitor's time and place, reduced-motion support, and a WebGL-free fallback.
+New: the address bar accepts page names (`projects`, `cv`, `blogs`…), back / forward / reload, links such as `yoursite/?page=projects` that open directly on a page (the site otherwise always opens on Home, even after a refresh), a contact form that opens your email app, one-click copy for the email and credential IDs, a flippable hourglass, and a desk whose sky, light and weather follow the visitor's time and place, reduced-motion support, and a WebGL-free fallback.

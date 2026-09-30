@@ -47,6 +47,12 @@
     const h = (location.hash || "").replace(/^#\/?/, "");
     return h ? window.PortfolioBrowser.resolveRoute(h) || "notfound" : null;
   }
+  // The site always opens on Home. Only an explicit link such as  yoursite/?page=projects  opens another page;
+  // a leftover #/page in the address (from an earlier visit or a refresh) is ignored.
+  function routeFromLink() {
+    const q = new URLSearchParams(location.search).get("page");
+    return q ? window.PortfolioBrowser.resolveRoute(q) || "notfound" : null;
+  }
 
   // ---------- 3D setup ----------
   if (has3D) {
@@ -78,6 +84,7 @@
 
   async function enterBrowser(opts = {}) {
     if (state !== "desk") return;
+    if (desk && desk.cvBusy && !opts.fromCv) return;   // the CV is on its way: let it finish first
     const route = opts.route || (browser.current && browser.current.key) || "home";
     body.classList.add("leaving-desk");
     intro.setAttribute("aria-hidden", "true");
@@ -108,6 +115,7 @@
     browserEl.hidden = true;
     browserEl.setAttribute("aria-hidden", "true");
     veil.style.transition = "";
+    if (desk) desk.resetCv();   // the CV sheet is back on the table when the desk comes into view
     state = "exiting";
     await desk.exit(t => { veil.style.opacity = 1 - smooth(0.02, 0.3, t); });
     veil.style.opacity = 0;
@@ -151,7 +159,7 @@
     const p = ndc(e);
     if (desk) desk.setPointer(p.x, -p.y);
     if (tunnel) tunnel.setPointer(p.x, -p.y);
-    if (state === "desk" && desk && e.pointerType === "mouse") {
+    if (state === "desk" && desk && !desk.cvBusy && e.pointerType === "mouse") {
       const onCanvas = e.target === canvas;
       const hit = onCanvas && desk.hitScreen(p.x, p.y);
       const prop = onCanvas && !hit ? desk.pickProp(p.x, p.y) : null;
@@ -163,13 +171,13 @@
   }, { passive: true });
 
   canvas.addEventListener("click", e => {
-    if (state !== "desk" || !desk) return;
+    if (state !== "desk" || !desk || desk.cvBusy) return;
     const p = ndc(e);
     tip.hidden = true;
     if (desk.hitScreen(p.x, p.y)) { enterBrowser(); return; }
     const prop = desk.pickProp(p.x, p.y);
     if (prop === "hourglass") desk.flipHourglass();
-    else if (prop === "cv") enterBrowser({ route: "resume", action: "open-cv" });
+    else if (prop === "cv") desk.raiseCv().then(() => enterBrowser({ route: "resume", action: "open-cv", fromCv: true }));   // the sheet lifts and flips first
     else if (prop === "coin") { desk.spinCoin(); enterBrowser({ route: "projects", focus: "proj-egety-blockchain" }); }
   });
   canvas.addEventListener("pointerleave", () => { tip.hidden = true; if (desk) desk.setHoverProp(null); });
@@ -203,7 +211,8 @@
 
   // ---------- start ----------
   function start() {
-    const deep = routeFromHash();
+    const deep = routeFromLink();
+    if (location.hash) { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
     const finishLoading = () => {
       loader.classList.add("done");
       setTimeout(() => loader.remove(), 700);

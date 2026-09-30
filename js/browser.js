@@ -10,14 +10,16 @@
   const A = window.ASSETS;
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+  // The order of the tabs is also the order of travel when scrolling: from now back to 2009,
+  // then out to what comes next (Contact) and on to the endless Blog.
   const ROUTES = [
-    { key: "home", title: "Home", icon: "✋" },
-    { key: "education", title: "Education", icon: "🎓" },
-    { key: "experience", title: "Experience", icon: "💻" },
-    { key: "projects", title: "Projects", icon: "📚" },
-    { key: "contact", title: "Contact", icon: "💬" },
-    { key: "resume", title: "Resume", icon: "📝" },
-    { key: "blog", title: "Blog", icon: "♾️" }
+    { key: "home", title: "Home", icon: "✋" },              // NOW
+    { key: "experience", title: "Experience", icon: "💻" },  // 2026 → 2012
+    { key: "resume", title: "Resume", icon: "📝" },          // 2023
+    { key: "projects", title: "Projects", icon: "📚" },      // 2017
+    { key: "education", title: "Education", icon: "🎓" },    // 2009
+    { key: "contact", title: "Contact", icon: "💬" },        // NEXT
+    { key: "blog", title: "Blog", icon: "♾️" }               // ∞
   ];
   const ALIASES = {
     "": "home", index: "home", about: "home", me: "home",
@@ -732,11 +734,13 @@
             <label class="sr" for="addr" data-i18n="Address">${esc(t("Address"))}</label>
             <input id="addr" type="text" dir="ltr" spellcheck="false" autocomplete="off" autocapitalize="off" enterkeyhint="go">
           </form>
+          <div class="depth" id="depth" role="img"><small>${esc(t("Depth"))}</small><span class="depth-dots" aria-hidden="true">${ROUTES.map(() => "<i></i>").join("")}</span><span class="depth-num" aria-hidden="true"><b>1</b>/${ROUTES.length}</span></div>
           <button type="button" class="tool desk-btn" data-desk data-i18n-label="Back to the desk" aria-label="${esc(t("Back to the desk"))}">${icon("desk")}<span data-i18n="Desk">${esc(t("Desk"))}</span></button>
         </div>
         <div class="progress" aria-hidden="true"></div>
       </header>
       <main class="viewport" id="viewport" tabindex="-1"><div class="page" id="page"></div></main>
+      <div class="dive" aria-hidden="true"><span class="dive-msg"></span><span class="dive-bar"><i></i></span></div>
       <div class="chrono" aria-hidden="true"><b class="chrono-year"></b><span class="chrono-dir"></span></div>`;
 
     this.viewport = this.root.querySelector("#viewport");
@@ -744,6 +748,8 @@
     this.addr = this.root.querySelector("#addr");
     this.progress = this.root.querySelector(".progress");
     this.chrono = this.root.querySelector(".chrono");
+    this.diveEl = this.root.querySelector(".dive");
+    this.depthEl = this.root.querySelector("#depth");
 
     this.root.addEventListener("click", e => {
       const nav = e.target.closest("[data-nav]");
@@ -778,12 +784,15 @@
       n.focus(); e.preventDefault();
     }));
     this.tabs = tabs;
+    this._initDive();
 
     let ticking = false;
     this.viewport.addEventListener("scroll", () => {
+      if (this.dive) this.dive.moved = performance.now();
       if (ticking) return; ticking = true;
       requestAnimationFrame(() => {
         ticking = false;
+        this._diveHint();
         const max = this.viewport.scrollHeight - this.viewport.clientHeight;
         const p = max > 0 ? this.viewport.scrollTop / max : 0;
         this.progress.style.transform = `scaleX(${p})`;
@@ -804,9 +813,15 @@
     this.addr.value = SCHEME + (key === "notfound" ? this.current.path : key);
     this.root.querySelector("#nav-back").disabled = this.idx <= 0;
     this.root.querySelector("#nav-fwd").disabled = this.idx >= this.stack.length - 1;
+    const di = ROUTES.findIndex(r => r.key === key);
+    this.depthEl.hidden = di < 0;
+    if (di >= 0) {
+      this.depthEl.setAttribute("aria-label", t("Page {n} of {total}", { n: di + 1, total: ROUTES.length }));
+      this.depthEl.querySelector("b").textContent = di + 1;
+      [...this.depthEl.querySelectorAll(".depth-dots i")].forEach((d, i) => { d.classList.toggle("now", i === di); d.classList.toggle("seen", i < di); });
+    }
     const r = ROUTES.find(r => r.key === key);
     document.title = (r ? t(r.title) : t("Not found")) + " — " + C.profile.name;
-    try { history.replaceState(null, "", "#/" + (key === "notfound" ? this.current.path : key)); } catch (e) {}
   };
 
   Browser.prototype._render = function (entry) {
@@ -853,6 +868,11 @@
     if (this.busy) { this.queued = [entry, instant]; return; }
     this.busy = true;
     const fromKey = this.shown ? this.shown.key : null;
+    // going to a later page is going deeper (down), to an earlier one is coming back up
+    const ix = k => ROUTES.findIndex(r => r.key === k);
+    const diveDir = entry.dive || (fromKey && ix(fromKey) >= 0 && ix(entry.key) >= 0 ? Math.sign(ix(entry.key) - ix(fromKey)) : 0);
+    if (diveDir && !instant) this.root.dataset.dive = diveDir > 0 ? "down" : "up";
+    this._diveShow(0, 0);
     this.current = entry;
     this._syncChrome();
     const planetKey = entry.key;
@@ -868,19 +888,23 @@
       this.page.classList.remove("arrived"); this.page.classList.add("leaving");
       await w.mid;
       this._render(entry);
+      if (entry.arrive === "bottom") this._toBottom();
       this.page.classList.remove("leaving");
       void this.page.offsetWidth;
       this.page.classList.add("arrived");
       await w.done;
       this.root.classList.remove("warping");
     }
+    delete this.root.dataset.dive;
+    this.dive.lock = performance.now() + 900;   // let a trackpad's momentum die out before the next dive
     if (entry.focus || entry.action) setTimeout(() => { if (entry.focus) this._applyFocus(entry.focus); if (entry.action === "open-cv") this._openCv(); }, instant ? 180 : 90);
     this.busy = false;
+    this._diveHint();
     if (this.queued) { const q = this.queued; this.queued = null; this._transition(q[0], q[1]); }
   };
 
   Browser.prototype.go = function (key, opts = {}) {
-    const entry = { key, path: opts.path, focus: opts.focus, action: opts.action };
+    const entry = { key, path: opts.path, focus: opts.focus, action: opts.action, dive: opts.dive, arrive: opts.arrive };
     if (this.current && this.current.key === key && key !== "notfound" && !opts.force) {
       if (opts.focus || opts.action) { if (opts.focus) this._applyFocus(opts.focus); if (opts.action === "open-cv") this._openCv(); }
       else this.viewport.scrollTo({ top: 0, behavior: "smooth" });
@@ -892,12 +916,13 @@
     this.idx = this.stack.length - 1;
     this._transition(entry, opts.instant);
   };
-  Browser.prototype.back = function () { if (this.idx > 0) { this.idx--; this._transition(this.stack[this.idx]); } };
-  Browser.prototype.forward = function () { if (this.idx < this.stack.length - 1) { this.idx++; this._transition(this.stack[this.idx]); } };
+  const plain = e => ({ ...e, dive: 0, arrive: null });
+  Browser.prototype.back = function () { if (this.idx > 0) { this.idx--; this._transition(plain(this.stack[this.idx])); } };
+  Browser.prototype.forward = function () { if (this.idx < this.stack.length - 1) { this.idx++; this._transition(plain(this.stack[this.idx])); } };
   Browser.prototype.reload = function () {
     const b = this.root.querySelector("#nav-reload");
     b.classList.remove("spin"); void b.offsetWidth; b.classList.add("spin");
-    if (this.current) this._transition(this.current);
+    if (this.current) this._transition(plain(this.current));
   };
 
   // -1 = towards the past, +1 = towards the future
@@ -952,6 +977,131 @@
   };
 
   Browser.prototype.refreshYear = function () { if (this.shown && this.shown.key === "experience") this._expYear(true); };
+
+  // ======================================================================
+  // Travel by scrolling: keep pushing past the end of a page (or past its top) to dive to the next
+  // (or previous) page, in the order of the tabs. A meter fills while you push.
+  const DIVE_PUSH = 460;   // how much scrolling past the edge it takes
+
+  Browser.prototype._max = function () { return this.viewport.scrollHeight - this.viewport.clientHeight; };
+  Browser.prototype._atEdge = function (d, tol) {
+    const t = tol == null ? 4 : tol, vp = this.viewport;
+    return d > 0 ? vp.scrollTop >= this._max() - t : vp.scrollTop <= t;
+  };
+  Browser.prototype._neighbor = function (d) {
+    const i = ROUTES.findIndex(r => r.key === (this.current && this.current.key));
+    return i < 0 ? null : ROUTES[i + d] || null;
+  };
+
+  // is something inside the page (a project book, the CV viewer, a text box) still able to scroll that way?
+  Browser.prototype._innerCanScroll = function (el, d) {
+    for (; el && el !== this.viewport; el = el.parentElement) {
+      if (el.nodeType !== 1) continue;
+      const oy = getComputedStyle(el).overflowY;
+      if ((oy === "auto" || oy === "scroll") && el.scrollHeight > el.clientHeight + 1 &&
+          (d > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0)) return true;
+    }
+    return false;
+  };
+
+  // show, update or hide the meter. hint = the quiet "keep scrolling" note at the bottom of a page
+  Browser.prototype._diveShow = function (d, k, hint) {
+    const el = this.diveEl, vp = this.viewport;
+    const n = d ? this._neighbor(d) : null;
+    if (!n) { el.classList.remove("on", "hint"); vp.style.setProperty("--dive", 0); delete vp.dataset.push; return; }
+    this.root.style.setProperty("--chrome-h", this.root.querySelector(".chrome").offsetHeight + "px");
+    el.classList.toggle("up", d < 0); el.classList.toggle("hint", !!hint); el.classList.add("on");
+    el.querySelector(".dive-msg").innerHTML = `${esc(t(d > 0 ? "Keep scrolling to go deeper" : "Keep scrolling up to go back"))}: <b>${esc(t(n.title))}</b>`;
+    el.querySelector(".dive-bar i").style.transform = `scaleX(${k})`;
+    vp.style.setProperty("--dive", hint ? 0 : k);
+    if (hint) delete vp.dataset.push; else vp.dataset.push = d > 0 ? "down" : "up";
+  };
+
+  // resting at the bottom of a page with another one below: say so, after a moment
+  Browser.prototype._diveHint = function () {
+    const S = this.dive; if (!S) return;
+    clearTimeout(S.hintT);
+    const ok = () => !this.busy && S.push <= 0 && this.shown && this._atEdge(1) && this._neighbor(1);
+    if (!ok()) { if (S.push <= 0) this._diveShow(0, 0); return; }
+    S.hintT = setTimeout(() => { if (ok()) this._diveShow(1, 0, true); }, 700);
+  };
+
+  Browser.prototype._divePush = function (d, amount) {
+    const S = this.dive, now = performance.now();
+    // a push already under way keeps going even if the layout shifts a little under it
+    if (this.busy || now < S.lock || !this._neighbor(d) || !this._atEdge(d, S.push > 0 && S.dir === d ? 48 : 4)) return;
+    if (now - S.moved < 220) return;   // still coasting into the edge: that isn't a push yet
+    if (S.dir !== d) { S.push = 0; S.dir = d; }
+    S.push += amount; S.last = now;
+    if (S.push >= DIVE_PUSH) return this._dive(d);
+    this._diveShow(d, S.push / DIVE_PUSH);
+    if (!S.raf) { S.tick = performance.now(); S.raf = requestAnimationFrame(S.frame); }
+  };
+
+  Browser.prototype._dive = function (d) {
+    const S = this.dive, n = this._neighbor(d);
+    S.push = 0; this._diveShow(0, 0);
+    if (n) this.go(n.key, { dive: d, arrive: d < 0 ? "bottom" : "top" });   // coming back up lands at the end of that page
+  };
+
+  // after a dive up: land at the end of the earlier page
+  Browser.prototype._toBottom = function () {
+    const vp = this.viewport;
+    const go = () => {
+      vp.scrollTop = vp.scrollHeight;
+      this.progress.style.transform = "scaleX(1)";
+      this.hooks.onScroll && this.hooks.onScroll(1);
+      if (this.shown && this.shown.key === "experience") this._expYear(true);
+    };
+    go(); requestAnimationFrame(go);
+  };
+
+  Browser.prototype._initDive = function () {
+    const vp = this.viewport;
+    const S = this.dive = { push: 0, dir: 0, last: 0, tick: 0, moved: 0, lock: 0, raf: 0, hintT: 0 };
+    // the meter drains when you stop pushing
+    S.frame = now => {
+      S.raf = 0;
+      const dt = Math.min(0.05, (now - S.tick) / 1000); S.tick = now;
+      if (now - S.last > 380) S.push = Math.max(0, S.push - 2200 * dt);
+      if (S.push <= 0 || this.busy) { S.push = 0; this._diveShow(0, 0); this._diveHint(); return; }
+      this._diveShow(S.dir, Math.min(1, S.push / DIVE_PUSH));
+      S.raf = requestAnimationFrame(S.frame);
+    };
+
+    vp.addEventListener("wheel", e => {
+      if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
+      if (Math.abs(dy) < 1) return;
+      const d = dy > 0 ? 1 : -1;
+      if (this._innerCanScroll(e.target, d)) return;
+      this._divePush(d, Math.abs(dy));
+    }, { passive: true });
+
+    let ty = null;
+    vp.addEventListener("touchstart", e => { ty = e.touches.length === 1 ? e.touches[0].clientY : null; }, { passive: true });
+    vp.addEventListener("touchmove", e => {
+      if (ty == null) return;
+      const y = e.touches[0].clientY, dy = ty - y; ty = y;   // finger up = scroll down
+      if (Math.abs(dy) < 0.5) return;
+      const d = dy > 0 ? 1 : -1;
+      if (this._innerCanScroll(e.target, d)) return;
+      this._divePush(d, Math.abs(dy) * 2.2);
+    }, { passive: true });
+    vp.addEventListener("touchend", () => { ty = null; }, { passive: true });
+
+    // keyboard: three presses at the edge
+    document.addEventListener("keydown", e => {
+      if (this.root.hidden || e.altKey || e.ctrlKey || e.metaKey) return;
+      const tg = e.target, tag = tg && tg.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (tg && tg.isContentEditable)) return;
+      if (tg && tg.closest && tg.closest(".chrome")) return;
+      if ((tag === "BUTTON" || tag === "A") && e.key === " ") return;
+      const d = e.key === "ArrowDown" || e.key === "PageDown" || (e.key === " " && !e.shiftKey) ? 1
+        : e.key === "ArrowUp" || e.key === "PageUp" || (e.key === " " && e.shiftKey) ? -1 : 0;
+      if (d) this._divePush(d, DIVE_PUSH / 3);
+    });
+  };
 
   Browser.resolveRoute = resolveRoute;
   Browser.ROUTES = ROUTES;

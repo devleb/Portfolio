@@ -144,6 +144,42 @@ window.CONTENT = {
       hue: 285
     },
     {
+      title: "ITcc",
+      key: "itcc",
+      start: "", end: "",
+      tech: ["PostgreSQL"],
+      role: "Project manager",
+      desc: "ITcc is an internal IT command and control system, a web app that lets the IT administrator audit all the systems: servers, PCs, NAS, network, Active Directory, replication and failover clusters. It has a logging system and reports, and it runs on PostgreSQL.",
+      /* Areas of work: the systems ITcc audits, plus its logging and reports. icon: server, pc, db, network, shield, async or report. */
+      appsTitle: "Areas of work",
+      apps: [
+        { name: "Servers", kind: "Audited", icon: "server", text: "Audited from the ITcc web app." },
+        { name: "PCs", kind: "Audited", icon: "pc", text: "Audited from the ITcc web app." },
+        { name: "NAS", kind: "Audited", icon: "db", text: "Audited from the ITcc web app." },
+        { name: "Network", kind: "Audited", icon: "network", text: "Audited from the ITcc web app." },
+        { name: "Active Directory", kind: "Audited", icon: "shield", text: "Audited from the ITcc web app." },
+        { name: "Replication and failover clusters", kind: "Audited", icon: "async", text: "Audited from the ITcc web app." },
+        { name: "Logging and reports", kind: "Built into ITcc", icon: "report", text: "The logging system and the reports for the IT administrator." }
+      ],
+      tasks: ["Auditing servers, PCs and NAS", "Auditing the network and Active Directory", "Auditing replication and failover clusters", "Logging system", "Reports for the IT administrator", "PostgreSQL database"],
+      /* Extra sections shown on the project page, each a title and a list of points. A section with no points stays hidden. */
+      sections: [
+        { title: "Reliability", points: [
+          "Alerting on failures.",
+          "Logging with retention and cleanup.",
+          "Database backups and maintenance.",
+          "Scheduled health checks and audits."
+        ] },
+        { title: "Scale and results", points: [
+          "Audited about 50 to 200 servers, PCs and devices.",
+          "Solved in production: failures in the cluster, replication and servers going unnoticed.",
+          "Solved in production: slow or missing reports.",
+          "Solved in production: lost or hard-to-trace logs."
+        ] }
+      ],
+      hue: 190
+    },
+    {
       title: "Market data tracker",
       key: "market-data-tracker",
       exp: "senior",
@@ -157,12 +193,12 @@ window.CONTENT = {
     {
       title: "Google Alerts to Excel",
       key: "google-alerts-to-excel",
-      exp: "senior",
-      start: "", end: "",
+      exp: "da",
+      start: "2022", end: "2023",
       tech: ["Go", "Gmail API", "OAuth2", "goquery", "excelize"],
       role: "Developer",
-      desc: "A Go tool that collects Google Alerts through the Gmail API and web scraping, then exports them to structured Excel sheets.",
-      tasks: ["OAuth2 Gmail integration", "HTML parsing with goquery", "Excel export with excelize"],
+      desc: "An internal Go tool for specific areas of interest. It collects Google Alerts through the Gmail API and web scraping, sorts each record into a preselected list of categories, and exports the result to Excel sheets for later use.",
+      tasks: ["OAuth2 Gmail integration", "HTML parsing with goquery", "Sorting records into a preselected list of categories", "Excel export with excelize", "Logging and alerts"],
       hue: 200
     },
     {
@@ -236,20 +272,22 @@ window.CONTENT = {
   /* Projects with exp: "solo" appear under this heading on the Experience page. */
   independent: { id: "solo", title: "Independent projects", text: "Built on my own time, outside my job roles." },
 
-  /* Skills: level is 0–100. Shown as an interactive chart on the Resume page. */
+  /* Skills: no self-rated levels. Each skill shows its evidence on the Resume page, worked out from the projects and roles above
+     (where its name appears in a project's `tech` or a role's text) plus the engineering examples that list it. Add a second
+     entry, [name, "evidence"], to write the evidence yourself. */
   skills: [
-    { cat: "Languages", items: [["Go", 85], ["Python", 90], ["JavaScript / TypeScript", 65], ["SQL", 80], ["PHP", 50]] },
-    { cat: "Back-end", items: [["FastAPI", 85], ["Django", 80], ["Node.js / Express", 60], ["REST & JWT auth", 80], ["Streamlit", 90], ["PyQt5", 70]] },
-    { cat: "Front-end", items: [["HTML / CSS", 80], ["HTMX", 75], ["Tailwind / Bootstrap", 75], ["React / Vite", 55], ["Three.js", 60]] },
-    { cat: "Databases", items: [["PostgreSQL", 75], ["SQLite", 85], ["SQL Server", 80], ["MySQL", 70]] },
-    { cat: "Blockchain", items: [["Go blockchain development", 75], ["Liquidity pool backends", 70], ["Node API integration", 70]] },
-    { cat: "Data & intelligence", items: [["pandas / EDA", 85], ["Visualization (Plotly, Power BI)", 80], ["Web scraping & automation", 90], ["OSINT tooling", 80], ["Local LLMs / RAG", 60]] },
-    { cat: "Tools", items: [["Git", 70], ["Linux", 70], ["VS Code / code-server", 85], ["Locust load testing", 65], ["Jupyter / Colab", 90]] },
+    { cat: "Languages", items: [["Go"], ["Python"], ["JavaScript / TypeScript"], ["SQL"], ["PHP"]] },
+    { cat: "Back-end", items: [["FastAPI"], ["Django"], ["Node.js / Express"], ["REST & JWT auth"], ["Streamlit"], ["PyQt5"]] },
+    { cat: "Front-end", items: [["HTML / CSS"], ["HTMX"], ["Tailwind / Bootstrap"], ["React / Vite"], ["Three.js"]] },
+    { cat: "Databases", items: [["PostgreSQL"], ["SQLite"], ["SQL Server"], ["MySQL"]] },
+    { cat: "Blockchain", items: [["Go blockchain development"], ["Liquidity pool backends"], ["Node API integration"]] },
+    { cat: "Data & intelligence", items: [["pandas / EDA"], ["Visualization (Plotly, Power BI)"], ["Web scraping & automation"], ["OSINT tooling"], ["Local LLMs / RAG"]] },
+    { cat: "Tools", items: [["Git"], ["Linux"], ["VS Code / code-server"], ["Locust load testing"], ["Jupyter / Colab"]] },
     /* Management: `group` puts these four cards under one "Management" chip in the filter. */
-    { cat: "Planning & delivery", group: "Management", items: [["Project planning", 90], ["Task breakdown", 85], ["Milestone & delivery tracking", 87], ["ClickUp", 90]] },
-    { cat: "Team leadership", group: "Management", items: [["Team leadership", 90], ["Task assignment", 90], ["Cross-team coordination (web, mobile, AI)", 85]] },
-    { cat: "Requirements & stakeholders", group: "Management", items: [["Specification review", 80], ["Gap analysis", 85], ["Client clarification", 90]] },
-    { cat: "Quality & risk", group: "Management", items: [["Load-test coordination", 85], ["Postmortems", 75], ["Disaster recovery planning", 85]] }
+    { cat: "Planning & delivery", group: "Management", items: [["Project planning", "Project Manager, Dynamic Eye Technology (2024 – Present)"], ["Task breakdown", "Project Manager, Dynamic Eye Technology (2024 – Present)"], ["Milestone & delivery tracking", "Delivery across the team as Project Manager (2024 – Present)"], ["ClickUp"]] },
+    { cat: "Team leadership", group: "Management", items: [["Team leadership", "Project Manager (2024 – Present); project manager over the ITcc team; tech lead on Task management & organizer (2021)"], ["Task assignment", "Splitting work across back-end, front-end, QA and deployment (Python Developer, 2016 – 2018)"], ["Cross-team coordination (web, mobile, AI)", "Several projects at once across web, mobile and AI (Dynamic Eye Technology, 2024 – Present)"]] },
+    { cat: "Requirements & stakeholders", group: "Management", items: [["Specification review", "Project Manager, Dynamic Eye Technology (2024 – Present)"], ["Gap analysis", "Project Manager, Dynamic Eye Technology (2024 – Present)"], ["Client clarification", "Project Manager, Dynamic Eye Technology (2024 – Present)"]] },
+    { cat: "Quality & risk", group: "Management", items: [["Load-test coordination"], ["Postmortems"], ["Disaster recovery planning"]] }
   ],
 
   languages: [
@@ -258,13 +296,60 @@ window.CONTENT = {
     ["French", "Intermediate"]
   ],
 
+  /* Engineering examples: real work behind the skills. Each one says what the system was, what I personally did,
+     what went wrong and what changed. `project` links it to a project; `skills` are the skills it is evidence for.
+     System and employer names are left out on purpose. Only add what is true, and numbers only if you have them. */
+  examples: [
+    {
+      id: "db-concurrency",
+      short: "SQLite → PostgreSQL move",
+      title: "Moving a content management platform from SQLite to PostgreSQL",
+      topic: "Database concurrency and production reliability",
+      context: "Independent project",
+      project: "content-management-platform",
+      skills: ["PostgreSQL", "SQLite"],
+      system: "A content management platform (FastAPI, SQLAlchemy) used by about 5 people at first and about 20 later. I built it alone, and a second developer joined later.",
+      responsibility: "I moved the database from SQLite to PostgreSQL and added indexes. The second developer helped with development and with reviewing the logs.",
+      problem: "When several people saved at the same time, the app sometimes returned \"database is locked\" errors and timeouts. SQLite allows only one write at a time, so the other writes had to wait.",
+      outcome: "After the move and the new indexes, the lock errors and timeouts became rare.",
+      proof: "Server logs and user feedback."
+    },
+    {
+      id: "background-jobs",
+      short: "Google Alerts collector",
+      title: "A Google Alerts collector that stopped failing silently",
+      topic: "Reliable background execution",
+      context: "Internal job, 2022 – 2023",
+      project: "google-alerts-to-excel",
+      skills: ["Web scraping & automation", "Go"],
+      system: "An internal Go tool for specific areas of interest. It collects Google Alerts, sorts each record into a preselected list of categories, and exports the result to Excel every week.",
+      responsibility: "I built the tool, including its logging and alerts.",
+      problem: "Early on it failed silently, crashed, and produced duplicate records.",
+      outcome: "After I added logging and alerts, the weekly exports came out correct and the logs showed no errors.",
+      proof: "The weekly exports and the logs."
+    },
+    {
+      id: "production-reliability",
+      short: "ITcc reliability",
+      title: "Keeping an IT command and control system reliable in production",
+      topic: "Production reliability",
+      context: "Internal project",
+      project: "itcc",
+      skills: ["PostgreSQL"],
+      system: "ITcc, an internal IT command and control web app on PostgreSQL. It lets the IT administrator audit servers, PCs, NAS, the network, Active Directory, and replication and failover clusters, with a logging system and reports. It covered about 50 to 200 devices.",
+      responsibility: "I was the project manager over the team that built it. The team put in place alerting on failures, logging with retention and cleanup, database backups and maintenance, and scheduled health checks and audits.",
+      problem: "In production, failures in the cluster, replication and servers went unnoticed, reports were slow or missing, and logs were lost or hard to trace.",
+      outcome: "All three problems were solved in production."
+    }
+  ],
+
   /* Technical leadership: categories from Technical_Qualifications_By_Category.xlsx,
      keeping only the qualifications I confirmed. `tags` are optional details, `status` marks something in progress. */
   leadership: [
     { cat: "Application development", icon: "app", items: [
       { name: "Python / FastAPI", tags: ["backend systems"] } ] },
     { cat: "Database and concurrency", icon: "db", items: [
-      { name: "PostgreSQL", tags: ["transaction isolation", "deadlocks", "advisory locks", "connection pools", "query contention"] },
+      { name: "PostgreSQL", tags: ["transaction isolation", "deadlocks", "advisory locks", "connection pools", "query contention"], example: "db-concurrency" },
       { name: "SQL Server" } ] },
     { cat: "Asynchronous processing", icon: "async", items: [
       { name: "Kafka", tags: ["event streaming"], status: "Currently learning" },

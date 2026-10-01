@@ -90,6 +90,10 @@
     infra: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
     shield: '<path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
     mobile: '<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/>',
+    server: '<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/>',
+    pc: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M9 20h6M12 16v4"/>',
+    network: '<circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v5M12 12l-6 5M12 12l6 5"/>',
+    report: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h6"/>',
     web: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3.4 3 14.6 0 18M12 3c-3 3.4-3 14.6 0 18"/>',
     ai: '<rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 3.5v3M14 3.5v3M10 17.5v3M14 17.5v3M3.5 10h3M3.5 14h3M17.5 10h3M17.5 14h3"/><path d="M10.5 12h3"/>'
   };
@@ -229,6 +233,37 @@
     <ul class="eco${compact ? " compact" : ""}">${p.apps.map(a => `
       <li><span class="eco-ico">${icon(a.icon)}</span><span class="eco-txt"><strong>${esc(a.name)}</strong><small>${esc(a.kind)}</small>${compact ? "" : `<span>${esc(a.text)}</span>`}</span></li>`).join("")}
     </ul>` : "";
+  // an engineering example: system, my part, problem, outcome (and what backs it up)
+  const EX_ROWS = [["System", "system"], ["My responsibility", "responsibility"], ["Problem", "problem"], ["Outcome", "outcome"]];
+  const exampleBlock = ex => `
+    <dl class="ex-rows">${EX_ROWS.map(([l, k]) => `<div><dt>${esc(t(l))}</dt><dd>${esc(ex[k])}</dd></div>`).join("")}</dl>
+    ${ex.proof ? `<p class="ex-proof"><strong>${esc(t("Evidence"))}:</strong> ${esc(ex.proof)}</p>` : ""}`;
+  const exampleFor = key => (C.examples || []).find(e => e.project === key);
+
+  /* Evidence for a skill, worked out from the site's own data instead of a self-rated percentage:
+     the projects that list it, the most recent role that mentions it, and any engineering example that names it. */
+  const reEsc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const skillTokens = name => {
+    const inner = [...name.matchAll(/\(([^)]*)\)/g)].map(m => m[1]), out = [];
+    [name.replace(/\([^)]*\)/g, " "), ...inner].forEach(part => part.split(/[\/,&]| and /).forEach(x => { x = x.trim(); if (x.length > 1) out.push(x); }));
+    return out;
+  };
+  const skillEvidence = ([name, given]) => {
+    if (given) return given;
+    const toks = skillTokens(name), low = toks.map(x => x.toLowerCase());
+    const projs = C.projects.filter(p => (p.tech || []).some(tag => tag.split("/").some(tt => low.includes(tt.trim().toLowerCase()))));
+    const roles = C.experience.filter(x => {
+      const text = x.text + " " + (x.points || []).join(" ");
+      return toks.some(tk => new RegExp("(^|[^A-Za-z0-9])" + reEsc(tk) + "([^A-Za-z0-9]|$)", tk.length <= 3 ? "" : "i").test(text));
+    });
+    const exs = (C.examples || []).filter(e => (e.skills || []).some(sk => sk.toLowerCase() === name.toLowerCase() || low.includes(sk.toLowerCase())));
+    const parts = [];
+    if (projs.length) parts.push(projs.length <= 3 ? projs.map(x => x.title).join(", ") : t("{n} projects", { n: projs.length }));
+    if (roles.length) parts.push(`${roles[0].role}, ${roles[0].years}`);
+    exs.forEach(e => parts.push(t("Example: {name}", { name: e.short })));
+    return parts.join(" · ");
+  };
+
   const projDates = p => { const d = [p.start, p.end].filter(Boolean); return d.length ? (d[0] === d[1] ? d[0] : d.join(" – ")) : ""; };
   const expName = id => {
     const x = C.experience.find(e => e.id === id);
@@ -420,13 +455,24 @@
                 </button>
                 <div class="lg-body" id="lg-p-${i}" role="region" aria-labelledby="lg-b-${i}">
                   <ul class="lg-items">${c.items.map(it => `
-                    <li><span class="lg-line"><strong>${esc(it.name)}</strong>${it.status ? `<span class="lg-status">${esc(it.status)}</span>` : ""}</span>${it.tags ? `<span class="lg-tags">${it.tags.map(x => `<span>${esc(x)}</span>`).join("")}</span>` : ""}</li>`).join("")}
+                    <li><span class="lg-line"><strong>${esc(it.name)}</strong>${it.status ? `<span class="lg-status">${esc(it.status)}</span>` : ""}</span>${it.tags ? `<span class="lg-tags">${it.tags.map(x => `<span>${esc(x)}</span>`).join("")}</span>` : ""}${it.example ? `<button type="button" class="ex-link" data-scroll-to="ex-${esc(it.example)}">${esc(t("See the example"))}</button>` : ""}</li>`).join("")}
                   </ul>
                 </div>
               </li>`).join("")}
           </ol>
         </div>
       </section>
+      ${(C.examples || []).length ? `
+      <section class="panel" id="examples">
+        <h2>${esc(t("Engineering examples"))}</h2>
+        ${C.examples.map(ex => `
+          <article class="example" id="ex-${esc(ex.id)}">
+            <h3>${esc(ex.title)}</h3>
+            <p class="ex-meta">${esc(ex.topic)} · ${esc(ex.context)}</p>
+            ${exampleBlock(ex)}
+            ${ex.project ? `<button type="button" class="ex-link" data-goto-proj="${esc(ex.project)}">${esc(t("See the project"))}</button>` : ""}
+          </article>`).join("")}
+      </section>` : ""}
       <section class="panel">
         <div class="skills-head"><h2>${esc(t("Skills"))}</h2>
           <div class="chips" role="group" aria-label="${esc(t("Filter skills by category"))}">
@@ -435,8 +481,6 @@
           </div>
         </div>
         <div id="skills-chart" class="skills-chart"></div>
-        <ul class="legend" aria-label="${esc(t("Level legend"))}"><li><i class="l5"></i>${esc(t("85% and above"))}</li><li><i class="l4"></i>${esc(t("75–84%"))}</li><li><i class="l3"></i>${esc(t("65–74%"))}</li><li><i class="l2"></i>${esc(t("below 65%"))}</li></ul>
-        <div id="skill-tip" class="skill-tip" role="status" aria-live="polite"></div>
       </section>`;
     },
 
@@ -519,6 +563,8 @@
                   ${roleBadge(p)}
                   ${p.desc ? `<h3>${esc(t("Description"))}</h3><p>${esc(p.desc)}</p>` : ""}
                   ${p.apps && p.apps.length ? `<h3>${esc(t(p.appsTitle || "Areas of work"))}</h3>${areaTiles(p)}` : ""}
+                  ${(p.sections || []).filter(x => x.points && x.points.length).map(x => `<h3>${esc(t(x.title))}</h3><ul class="points">${x.points.map(pt => `<li>${esc(pt)}</li>`).join("")}</ul>`).join("")}
+                  ${exampleFor(p.key) ? `<h3>${esc(t("Engineering example"))}: ${esc(exampleFor(p.key).topic)}</h3>${exampleBlock(exampleFor(p.key))}` : ""}
                   ${p.tasks && p.tasks.length ? `<h3>${esc(t("Tasks"))}</h3><ul class="points">${p.tasks.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
                   <div class="tag-row">${p.tech.map(x => `<button type="button" class="tag${state.tech.has(x) ? " on" : ""}" data-tech-add="${esc(x)}" aria-label="${esc(t("Filter by {name}", { name: x }))}">${esc(x)}</button>`).join("")}</div>
                 </div>
@@ -655,34 +701,23 @@
       }
 
       const chart = root.querySelector("#skills-chart");
-      const tip = root.querySelector("#skill-tip");
-      const level = v => (v >= 85 ? 5 : v >= 75 ? 4 : v >= 65 ? 3 : 2);
       let cat = "all";
       const draw = () => {
-        chart.innerHTML = C.skills.filter(s => cat === "all" || (s.group || s.cat) === cat).map(s => `
+        chart.innerHTML = C.skills.filter(s => cat === "all" || (s.group || s.cat) === cat).map(s => {
+          const rows = s.items.map(it => ({ name: it[0], ev: skillEvidence(it) }));
+          const proven = rows.filter(r => r.ev), plain = rows.filter(r => !r.ev);
+          return `
           <div class="skill-cat">
             <h3>${esc(s.cat)}</h3>
-            <div class="bars">${s.items.map(([n, v]) => `
-              <div class="bar" tabindex="0" role="img" aria-label="${esc(n)}: ${v}%" data-skill="${esc(n)}" data-v="${v}">
-                <span class="bar-name">${esc(n)}</span>
-                <span class="track"><span class="fill l${level(v)}" style="--v:${v}%"></span></span>
-                <span class="bar-v">${v}%</span>
-              </div>`).join("")}</div>
-          </div>`).join("");
+            ${proven.length ? `<ul class="evid">${proven.map(r => `<li><span class="ev-name">${esc(r.name)}</span><span class="ev-text">${esc(r.ev)}</span></li>`).join("")}</ul>` : ""}
+            ${plain.length ? `<p class="also"><strong>${esc(t("Also"))}:</strong> ${plain.map(r => esc(r.name)).join(", ")}</p>` : ""}
+          </div>`;
+        }).join("");
       };
-      const show = el => {
-        if (!el) { tip.classList.remove("show"); return; }
-        tip.innerHTML = `<strong>${esc(t("Skill:"))}</strong> ${esc(el.dataset.skill)}<br><strong>${esc(t("Experience:"))}</strong> ${el.dataset.v}%`;
-        const r = el.getBoundingClientRect(), pr = chart.parentElement.getBoundingClientRect();
-        tip.style.left = Math.min(r.left - pr.left + 20, pr.width - 200) + "px";
-        tip.style.top = r.top - pr.top - 56 + "px";
-        tip.classList.add("show");
-      };
-      chart.addEventListener("pointerover", e => show(e.target.closest(".bar")));
-      chart.addEventListener("pointerleave", () => show(null));
-      chart.addEventListener("focusin", e => show(e.target.closest(".bar")));
-      chart.addEventListener("focusout", () => show(null));
-      chart.addEventListener("click", e => show(e.target.closest(".bar")));
+      root.querySelectorAll("[data-scroll-to]").forEach(b => b.addEventListener("click", () => {
+        const el = root.querySelector("#" + b.dataset.scrollTo);
+        if (el) el.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+      }));
       root.querySelectorAll(".chip[data-cat]").forEach(c => c.addEventListener("click", () => {
         cat = c.dataset.cat;
         root.querySelectorAll(".chip[data-cat]").forEach(x => x.setAttribute("aria-pressed", x === c));

@@ -306,6 +306,12 @@ Object.assign(window.CONTENT, {
           "kind": "Built into SanctiCore",
           "icon": "async",
           "text": "Scheduled polling of each official list: OFAC every 4 hours, the others daily."
+        },
+        {
+          "name": "Multi -search",
+          "kind": "Batch of entities",
+          "icon": "web",
+          "text": "feature that allow user to search a list of entities with selecting the most probably candidates"
         }
       ],
       "tasks": [
@@ -316,7 +322,7 @@ Object.assign(window.CONTENT, {
       ],
       "hue": 25,
       "sections": [],
-      "logo": "blue shield"
+      "logo": ""
     },
     {
       "title": "Market data tracker",

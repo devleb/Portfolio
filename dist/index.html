@@ -797,6 +797,24 @@ window.CONTENT = {
       hue: 190
     },
     {
+      title: "SanctiCore",
+      key: "sancticore",
+      exp: "solo",
+      start: "Jun 2026", end: "Aug 2026",
+      tech: ["React", "TypeScript", "Vite", "Tailwind", "PostgreSQL", "Deno"],
+      role: "Project manager",
+      desc: "An internal sanctions-list management platform. It ingests, deduplicates and exposes a searchable database of sanctioned individuals and entities from official sources: OFAC (US), UN Security Council, UK HMT, Australia DFAT and the EU.",
+      appsTitle: "Areas of work",
+      apps: [
+        { name: "Search", kind: "Feature", icon: "web", text: "Full-text search across individuals, entities, vessels and aircraft, with Arabic and Latin transliteration and fuzzy matching." },
+        { name: "Screening", kind: "Feature", icon: "report", text: "Screen a pasted or uploaded list of names, or entities extracted from a PDF, against the database in one run." },
+        { name: "Admin dashboard", kind: "Feature", icon: "shield", text: "Ingestion control, source health monitoring, audit log and analytics, with role-based access." },
+        { name: "Source ingestion", kind: "Built into SanctiCore", icon: "async", text: "Scheduled polling of each official list: OFAC every 4 hours, the others daily." }
+      ],
+      tasks: ["Project planning and task breakdown", "Delivery of the search, screening and admin features", "Scheduled ingestion and deduplication of sanctions lists", "PostgreSQL database (Supabase)"],
+      hue: 25
+    },
+    {
       title: "Market data tracker",
       key: "market-data-tracker",
       exp: "senior",
@@ -1016,6 +1034,11 @@ window.CONTENT = {
     }
   ]
 };
+
+</script>
+  <script>
+/* Written by admin.html. Overrides the Home, Experience, Projects and Education content in content.js. */
+Object.assign(window.CONTENT, {});
 
 </script>
   <script>

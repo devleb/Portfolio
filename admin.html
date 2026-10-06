@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Portfolio Admin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠</text></svg>">
+<style>
+:root {
+  --void: #070b1a; --deep: #0d1330; --panel: #121a3d; --line: rgba(234,230,218,.14);
+  --star: #eae6da; --dust: #a3a8bf; --amber: #f2a541; --ok: #7cc7b4; --bad: #ff8a80;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--void); color: var(--star); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { position: sticky; top: 0; z-index: 5; background: var(--deep); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+header h1 { font-size: 16px; margin: 0 12px 0 0; }
+nav { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.spacer { flex: 1; }
+main { max-width: 900px; margin: 0 auto; padding: 20px 16px 80px; }
+button, .btn { font: inherit; background: var(--panel); color: var(--star); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+button:hover { border-color: var(--amber); }
+button.on { background: var(--amber); color: #1a0f06; border-color: var(--amber); font-weight: 600; }
+button.primary { background: var(--amber); color: #1a0f06; border-color: var(--amber); font-weight: 600; }
+button.danger:hover { border-color: var(--bad); color: var(--bad); }
+button:disabled { opacity: .5; cursor: default; }
+label { display: block; margin: 10px 0 0; }
+label > span { display: block; font-size: 12px; color: var(--dust); margin-bottom: 3px; }
+input, textarea, select { width: 100%; font: inherit; color: var(--star); background: var(--void); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--amber); outline-offset: 0; }
+input[readonly] { opacity: .6; }
+textarea { min-height: 80px; resize: vertical; }
+.hint { font-size: 12px; color: var(--dust); margin-top: 3px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+@media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+details { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; margin: 10px 0; }
+details > summary { cursor: pointer; padding: 10px 12px; display: flex; gap: 8px; align-items: center; list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before { content: "▸"; color: var(--amber); }
+details[open] > summary::before { content: "▾"; }
+details > summary .t { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+details > summary button { padding: 2px 9px; }
+.body { padding: 0 14px 14px; }
+h2 { font-size: 18px; margin: 22px 0 4px; }
+h3 { font-size: 14px; margin: 18px 0 0; color: var(--amber); text-transform: uppercase; letter-spacing: .06em; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 4px 16px 16px; margin-top: 14px; }
+#status { padding: 8px 16px; font-size: 13px; }
+#status.ok { color: var(--ok); } #status.err { color: var(--bad); }
+.login { max-width: 520px; margin: 60px auto; }
+.hidden { display: none !important; }
+a { color: var(--amber); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Portfolio Admin</h1>
+  <nav id="tabs" class="hidden"></nav>
+  <button id="reload" class="hidden">Reload from GitHub</button>
+  <button id="save" class="primary hidden">Save to GitHub</button>
+  <button id="logout" class="hidden">Sign out</button>
+</header>
+<div id="status"></div>
+
+<main>
+  <section id="login" class="login box">
+    <h2>Sign in</h2>
+    <p class="hint">Edits are saved by committing <code>js/content.admin.js</code> to <code>devleb/Portfolio</code> (branch <code>master</code>). Paste a GitHub personal access token that can write to that repository: a fine-grained token with <em>Contents: Read and write</em> on this repository only. The token stays in this browser tab (sessionStorage) and is only sent to api.github.com.</p>
+    <label><span>GitHub token</span><input id="token" type="password" autocomplete="off" placeholder="github_pat_..."></label>
+    <p><button id="signin" class="primary">Sign in</button></p>
+  </section>
+  <section id="editor" class="hidden"></section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  const REPO = "devleb/Portfolio", BRANCH = "master", API = "https://api.github.com/repos/" + REPO;
+  const FILE = "js/content.admin.js";
+  const ICONS = ["", "web", "mobile", "ai", "server", "pc", "db", "network", "shield", "async", "report"];
+  const $ = id => document.getElementById(id);
+
+  let token = "", state = null, adminSha = null, tab = "home", dirty = false;
+  const fresh = new WeakSet();   // newly added experience roles (their id is still editable)
+
+  /* ---------- small helpers ---------- */
+  function el(tag, attrs, ...kids) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (k === "class") e.className = v;
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+      else if (v !== false && v != null) e.setAttribute(k, v === true ? "" : v);
+    }
+    kids.flat().forEach(k => e.append(k && k.nodeType ? k : document.createTextNode(k == null ? "" : k)));
+    return e;
+  }
+  function status(msg, kind) { const s = $("status"); s.textContent = msg || ""; s.className = kind || ""; }
+  function touch() { dirty = true; }
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const b64decode = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), c => c.charCodeAt(0)));
+  const b64encode = s => { const u = new TextEncoder().encode(s); let bin = ""; u.forEach(c => bin += String.fromCharCode(c)); return btoa(bin); };
+
+  /* ---------- GitHub ---------- */
+  async function gh(path, opts) {
+    const res = await fetch(API + path, Object.assign({
+      headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" }
+    }, opts));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { const e = new Error(data.message || ("GitHub error " + res.status)); e.status = res.status; throw e; }
+    return data;
+  }
+  async function readSource(path) {
+    const d = await gh("/contents/" + path + "?ref=" + BRANCH);
+    return { text: b64decode(d.content), sha: d.sha };
+  }
+  function run(src, w) { new Function("window", src)(w); return w; }
+
+  async function load() {
+    status("Loading from GitHub…");
+    const repo = await gh("");
+    if (!repo.permissions || !repo.permissions.push) throw new Error("This token cannot write to " + REPO + ". Give it Contents: Read and write.");
+    const base = await readSource("js/content.js");
+    let admin = { text: "", sha: null };
+    try { admin = await readSource(FILE); } catch (e) { if (e.status !== 404) throw e; }
+    const w = run(base.text, {});
+    if (admin.text) run(admin.text, w);   // content.admin.js does Object.assign(window.CONTENT, {...})
+    const c = w.CONTENT;
+    state = clone({ profile: c.profile, education: c.education, experience: c.experience, projects: c.projects });
+    adminSha = admin.sha;
+    dirty = false;
+    status("Loaded.", "ok");
+  }
+
+  function clean(v) {
+    if (typeof v === "string") return v.trim();
+    if (Array.isArray(v)) {
+      const a = v.map(clean);
+      return a.every(x => typeof x === "string") ? a.filter(x => x !== "") : a;
+    }
+    if (v && typeof v === "object") { const o = {}; for (const k of Object.keys(v)) o[k] = clean(v[k]); return o; }
+    return v;
+  }
+  function validate(s) {
+    const errs = [];
+    const ids = new Set();
+    s.experience.forEach((r, i) => {
+      if (!r.id) errs.push("Experience #" + (i + 1) + " needs an id.");
+      else if (ids.has(r.id)) errs.push("Duplicate experience id: " + r.id);
+      ids.add(r.id);
+      if (!r.role) errs.push("Experience #" + (i + 1) + " needs a role.");
+    });
+    const keys = new Set();
+    s.projects.forEach((p, i) => {
+      if (!p.title) errs.push("Project #" + (i + 1) + " needs a title.");
+      if (!p.key) errs.push("Project \"" + p.title + "\" needs a key.");
+      else if (keys.has(p.key)) errs.push("Duplicate project key: " + p.key);
+      keys.add(p.key);
+      if (p.exp && p.exp !== "solo" && !ids.has(p.exp)) errs.push("Project \"" + p.title + "\" points to a missing role: " + p.exp);
+    });
+    if (!s.profile.name) errs.push("Home: name is required.");
+    return errs;
+  }
+  function buildSource(s) {
+    return "/* Generated by admin.html. Overrides the Home, Experience, Projects and Education content in content.js.\n" +
+      "   Edit through the admin page, or by hand if you keep the same shape. */\n" +
+      "Object.assign(window.CONTENT, " + JSON.stringify(s, null, 2) + ");\n";
+  }
+
+  async function save() {
+    const out = clean(state);
+    const errs = validate(out);
+    if (errs.length) { status(errs.join("  •  "), "err"); return; }
+    $("save").disabled = true;
+    status("Saving to GitHub…");
+    try {
+      const body = { message: "content: update via admin page", content: b64encode(buildSource(out)), branch: BRANCH };
+      if (adminSha) body.sha = adminSha;
+      const r = await gh("/contents/" + FILE, { method: "PUT", body: JSON.stringify(body) });
+      adminSha = r.content.sha; state = clone(out); dirty = false; render();
+      status("Saved and committed (" + r.commit.sha.slice(0, 7) + "). The live site updates after GitHub Pages redeploys, usually within a minute or two.", "ok");
+    } catch (e) {
+      status(e.status === 409 || e.status === 422
+        ? "Someone changed the file on GitHub since you loaded it. Use Reload from GitHub (your edits here will be lost), then redo them."
+        : "Save failed: " + e.message, "err");
+    } finally { $("save").disabled = false; }
+  }
+
+  /* ---------- form builders ---------- */
+  function field(obj, f) {
+    const t = f.t || "text";
+    let input;
+    if (t === "area") {
+      input = el("textarea", { oninput: e => { obj[f.k] = e.target.value; touch(); } });
+      input.value = obj[f.k] || "";
+    } else if (t === "list") {
+      input = el("textarea", { oninput: e => { obj[f.k] = e.target.value.split("\n"); touch(); } });
+      input.value = (obj[f.k] || []).join("\n");
+    } else if (t === "num") {
+      input = el("input", { type: "number", oninput: e => { if (e.target.value === "") delete obj[f.k]; else obj[f.k] = Number(e.target.value); touch(); } });
+      input.value = obj[f.k] == null ? "" : obj[f.k];
+    } else if (t === "select") {
+      input = el("select", { onchange: e => { obj[f.k] = e.target.value; touch(); } },
+        f.options().map(o => el("option", { value: o[0] }, o[1])));
+      input.value = obj[f.k] || "";
+    } else {
+      input = el("input", { type: "text", oninput: e => { obj[f.k] = e.target.value; touch(); } });
+      input.value = obj[f.k] == null ? "" : obj[f.k];
+      if (f.readonly && f.readonly(obj)) input.readOnly = true;
+    }
+    return el("label", f.wide || t === "area" || t === "list" ? { style: "grid-column: 1 / -1" } : {},
+      el("span", {}, f.l), input, f.h ? el("div", { class: "hint" }, f.h) : null);
+  }
+  function form(obj, fields) { return el("div", { class: "grid" }, fields.map(f => f.t === "objlist" ? objlist(obj, f) : field(obj, f))); }
+
+  function objlist(obj, f) {
+    const arr = obj[f.k] = obj[f.k] || [];
+    const wrap = el("div", { style: "grid-column: 1 / -1" });
+    function draw() {
+      wrap.replaceChildren(el("h3", {}, f.l));
+      arr.forEach((item, i) => {
+        const move = d => e => { e.preventDefault(); e.stopPropagation(); const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; touch(); (f.redraw || draw)(); };
+        const del = e => {
+          e.preventDefault(); e.stopPropagation();
+          if (f.beforeDelete && !f.beforeDelete(item)) return;
+          if (!confirm("Delete this item?")) return;
+          arr.splice(i, 1); touch(); (f.redraw || draw)();
+        };
+        const sum = el("summary", {}, el("span", { class: "t" }, f.title(item) || "(untitled)"),
+          el("button", { type: "button", title: "Move up", onclick: move(-1) }, "↑"),
+          el("button", { type: "button", title: "Move down", onclick: move(1) }, "↓"),
+          el("button", { type: "button", class: "danger", title: "Delete", onclick: del }, "✕"));
+        wrap.append(el("details", {}, sum, el("div", { class: "body" }, form(item, typeof f.fields === "function" ? f.fields(item) : f.fields))));
+      });
+      wrap.append(el("button", { type: "button", onclick: () => { const n = f.blank(); fresh.add(n); arr.push(n); touch(); (f.redraw || draw)(); } }, "+ Add " + (f.noun || "item")));
+    }
+    draw();
+    return wrap;
+  }
+
+  /* ---------- page definitions ---------- */
+  const expOptions = () => state.experience.map(r => [r.id, r.role + " (" + r.id + ")"]).concat([["solo", "Independent project (solo)"]]);
+
+  const appFields = [
+    { k: "name", l: "Name" }, { k: "kind", l: "Kind (e.g. Audited, Feature)" },
+    { k: "icon", l: "Icon", t: "select", options: () => ICONS.map(i => [i, i || "(none)"]) },
+    { k: "text", l: "Text", t: "area" }
+  ];
+  const sectionFields = [{ k: "title", l: "Section title" }, { k: "points", l: "Points (one per line)", t: "list" }];
+  const projectFields = [
+    { k: "title", l: "Title" },
+    { k: "key", l: "Key (unique, used in URLs and links)", h: "Lowercase letters and dashes. Resume examples refer to a project by this key, so avoid changing it." },
+    { k: "exp", l: "Belongs to", t: "select", options: expOptions },
+    { k: "role", l: "Your role", h: "Leave empty to hide it on the card." },
+    { k: "start", l: "Start (e.g. Jun 2026)" }, { k: "end", l: "End (e.g. Aug 2026 or Present)" },
+    { k: "logo", l: "Logo key", h: "Optional. A key from ASSETS in content.js (for example eye). Leave empty for none." },
+    { k: "hue", l: "Card colour (hue 0–360)", t: "num" },
+    { k: "desc", l: "Description", t: "area" },
+    { k: "tech", l: "Tech (one per line)", t: "list" },
+    { k: "tasks", l: "Tasks (one per line)", t: "list" },
+    { k: "appsTitle", l: "Title of the areas-of-work tiles", wide: true },
+    { k: "apps", l: "Areas of work (tiles)", t: "objlist", noun: "tile", title: a => a.name, fields: appFields, blank: () => ({ name: "", kind: "", icon: "", text: "" }) },
+    { k: "sections", l: "Extra sections", t: "objlist", noun: "section", title: s => s.title, fields: sectionFields, blank: () => ({ title: "", points: [] }) }
+  ];
+
+  const PAGES = {
+    home: { label: "Home", draw() {
+      const p = state.profile;
+      return el("div", {}, el("h2", {}, "Home"),
+        el("div", { class: "box" }, form(p, [
+          { k: "name", l: "Name" }, { k: "handle", l: "Handle" },
+          { k: "role", l: "Role / title" }, { k: "location", l: "Location" },
+          { k: "email", l: "Email" }, { k: "since", l: "Working since (year)", t: "num" },
+          { k: "intro", l: "Intro", t: "area" },
+          { k: "exploring", l: "Currently exploring", t: "area" },
+          { k: "focus", l: "Focus areas", t: "objlist", noun: "focus area", title: x => x.title,
+            fields: [{ k: "title", l: "Title" }, { k: "text", l: "Text", t: "area" }, { k: "tech", l: "Tech (one per line)", t: "list" }],
+            blank: () => ({ title: "", text: "", tech: [] }) }
+        ])));
+    } },
+    projects: { label: "Projects", draw() {
+      const box = el("div", { class: "box" });
+      box.append(objlist(state, { k: "projects", l: "Projects (order = order on the site)", noun: "project",
+        title: p => p.title + (p.start || p.end ? "  ·  " + [p.start, p.end].filter(Boolean).join(" – ") : ""),
+        fields: projectFields, blank: () => ({ title: "", key: "", exp: "solo", start: "", end: "", tech: [], role: "", desc: "", tasks: [], hue: 200 }) }));
+      return el("div", {}, el("h2", {}, "Projects"), box);
+    } },
+    experience: { label: "Experience", draw() {
+      const box = el("div", { class: "box" });
+      box.append(objlist(state, { k: "experience", l: "Roles (order = order on the site)", noun: "role",
+        title: r => r.role + (r.years ? "  ·  " + r.years : ""),
+        beforeDelete: r => {
+          const used = state.projects.filter(p => p.exp === r.id);
+          return !used.length || confirm(used.length + " project(s) belong to this role (" + used.map(p => p.title).join(", ") + "). Delete it anyway? Move those projects to another role first, or they will fail to save.");
+        },
+        fields: () => [
+          { k: "id", l: "Id (short, unique)", h: "Projects link to a role by this id. It can only be set when the role is created.", readonly: r => !fresh.has(r) },
+          { k: "years", l: "Years (e.g. 2024 – Present)" },
+          { k: "role", l: "Role and company", wide: true },
+          { k: "text", l: "Summary", t: "area" },
+          { k: "points", l: "Points (one per line)", t: "list" }
+        ],
+        blank: () => ({ id: "", role: "", years: "", text: "", points: [] }) }));
+      return el("div", {}, el("h2", {}, "Experience"), box);
+    } },
+    education: { label: "Education", draw() {
+      const ed = state.education;
+      return el("div", {}, el("h2", {}, "Education"),
+        el("div", { class: "box" }, el("h3", {}, "Degree"), form(ed.degree, [
+          { k: "school", l: "School" }, { k: "years", l: "Years" },
+          { k: "title", l: "Degree title", wide: true }, { k: "points", l: "Points (one per line)", t: "list" }
+        ]), objlist(ed, { k: "certificates", l: "Certificates", noun: "certificate",
+          title: c => c.title + (c.date ? "  ·  " + c.date : ""),
+          fields: [{ k: "title", l: "Title", wide: true }, { k: "issuer", l: "Issuer" }, { k: "date", l: "Date" }, { k: "id", l: "Credential id" }],
+          blank: () => ({ title: "", date: "", issuer: "" }) })));
+    } }
+  };
+
+  function render() {
+    const nav = $("tabs");
+    nav.replaceChildren(...Object.keys(PAGES).map(k => el("button", { class: k === tab ? "on" : "", onclick: () => { tab = k; render(); } }, PAGES[k].label)));
+    $("editor").replaceChildren(PAGES[tab].draw());
+  }
+
+  /* ---------- session ---------- */
+  function showEditor(on) {
+    $("login").classList.toggle("hidden", on);
+    ["editor", "tabs", "save", "reload", "logout"].forEach(i => $(i).classList.toggle("hidden", !on));
+  }
+  async function start(t) {
+    token = t;
+    try {
+      await load(); showEditor(true); render();
+      try { sessionStorage.setItem("portfolio-admin-token", token); } catch (e) {}
+    } catch (e) {
+      token = ""; showEditor(false);
+      status(e.status === 401 ? "That token was rejected by GitHub." : e.message, "err");
+      try { sessionStorage.removeItem("portfolio-admin-token"); } catch (e2) {}
+    }
+  }
+  $("signin").addEventListener("click", () => { const v = $("token").value.trim(); if (v) start(v); });
+  $("token").addEventListener("keydown", e => { if (e.key === "Enter") $("signin").click(); });
+  $("save").addEventListener("click", save);
+  $("reload").addEventListener("click", async () => {
+    if (dirty && !confirm("Discard your unsaved edits and reload from GitHub?")) return;
+    try { await load(); render(); } catch (e) { status(e.message, "err"); }
+  });
+  $("logout").addEventListener("click", () => {
+    if (dirty && !confirm("You have unsaved edits. Sign out anyway?")) return;
+    token = ""; state = null; $("token").value = ""; showEditor(false); status("");
+    try { sessionStorage.removeItem("portfolio-admin-token"); } catch (e) {}
+  });
+  window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+  try { const t = sessionStorage.getItem("portfolio-admin-token"); if (t) start(t); } catch (e) {}
+})();
+</script>
+</body>
+</html>

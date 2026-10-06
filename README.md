@@ -26,6 +26,12 @@ All text lives in **`js/content.js`**: profile, education, certificates, experie
 | `assets/cv/Georges-Matta-CV.pdf` | Your latest CV (same file name) |
 | `assets/img/blog-data-analysis.jpg` | Blog cover image |
 
+## Admin page
+
+`admin.html` (not linked from the site, `noindex`) edits the **Home, Projects, Experience and Education** content in the browser and saves it by committing `js/content.admin.js` to this repository through the GitHub API. `content.admin.js` is loaded after `content.js` and overrides those four sections, so everything else in `content.js` (skills, examples, links, blog, delivery) is still edited by hand.
+
+Sign in with a fine-grained GitHub token for this repository with *Contents: Read and write*. The token stays in the browser tab and is only sent to api.github.com. A visitor who opens the page without a valid token can't save anything. After saving, GitHub Pages redeploys in a minute or two. `dist/index.html` is not rebuilt by the admin page; run `python3 build.py` if you use the single-file version.
+
 ## Deploy (free)
 
 **GitHub Pages:** push this folder to a repository, then Settings → Pages → Deploy from branch → `main` / root.

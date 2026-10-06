@@ -217,9 +217,9 @@ window.CONTENT = {
       title: "SanctiCore",
       key: "sancticore",
       exp: "solo",
-      start: "", end: "",
+      start: "Jun 2026", end: "Aug 2026",
       tech: ["React", "TypeScript", "Vite", "Tailwind", "PostgreSQL", "Deno"],
-      role: "",
+      role: "Project manager",
       desc: "An internal sanctions-list management platform. It ingests, deduplicates and exposes a searchable database of sanctioned individuals and entities from official sources: OFAC (US), UN Security Council, UK HMT, Australia DFAT and the EU.",
       appsTitle: "Areas of work",
       apps: [
@@ -228,7 +228,7 @@ window.CONTENT = {
         { name: "Admin dashboard", kind: "Feature", icon: "shield", text: "Ingestion control, source health monitoring, audit log and analytics, with role-based access." },
         { name: "Source ingestion", kind: "Built into SanctiCore", icon: "async", text: "Scheduled polling of each official list: OFAC every 4 hours, the others daily." }
       ],
-      tasks: ["React and TypeScript front-end", "Supabase PostgreSQL back-end and Deno edge functions", "Scheduled ingestion and deduplication of sanctions lists", "Role-based authentication", "Push notifications for admins"],
+      tasks: ["Project planning and task breakdown", "Delivery of the search, screening and admin features", "Scheduled ingestion and deduplication of sanctions lists", "PostgreSQL database (Supabase)"],
       hue: 25
     },
     {

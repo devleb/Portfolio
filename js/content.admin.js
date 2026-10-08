@@ -8,7 +8,7 @@ Object.assign(window.CONTENT, {
     "location": "Lebanon",
     "email": "testdevleb@gmail.com",
     "since": 2012,
-    "intro": "I build backends in Go and Python, blockchain infrastructure, and intelligence tools that turn scattered data into clear decisions. I hold a BSc in Computer Science and currently manage projects at Dynamic Eye Technology across web development, mobile development and AI solutions.",
+    "intro": "I building full systems (backends-frontend-Database) in Go and Python, blockchain infrastructure, and intelligence tools that turn scattered data into clear decisions. \nholding  a BSc in Computer Science and currently manage projects at Dynamic Eye Technology across web development, mobile development and AI solutions.",
     "focus": [
       {
         "title": "Backend systems",

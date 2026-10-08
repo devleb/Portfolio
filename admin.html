@@ -177,7 +177,7 @@ a { color: var(--amber); }
       else if (keys.has(p.key)) errs.push("Duplicate project key: " + p.key);
       keys.add(p.key);
       if (p.exp && p.exp !== "solo" && !ids.has(p.exp)) errs.push("Project \"" + p.title + "\" points to a missing role: " + p.exp);
-      if (p.logo && !icons[p.logo]) errs.push("Project \"" + p.title + "\" uses a cover icon that does not exist: " + p.logo);
+      if (p.logo && !icons[p.logo]) errs.push("Project \"" + p.title + "\" uses a logo that does not exist: " + p.logo);
       if (p.cover && !/^assets\/img\//.test(p.cover)) errs.push("Project \"" + p.title + "\" has a cover image outside assets/img: " + p.cover);
     });
     if (!s.profile.name) errs.push("Home: name is required.");
@@ -236,46 +236,44 @@ a { color: var(--amber); }
         const key = await uploadIcon(picked);
         if (!key) { status(""); return; }
         obj[f.k] = key; touch(); options(); thumb();
-        status("Icon \"" + key + "\" uploaded to assets/img and selected. Press Save to GitHub to put it on the site.", "ok");
+        status("Logo \"" + key + "\" uploaded and selected. Press Save to GitHub to put it on the site.", "ok");
       } catch (err) { status("Upload failed: " + err.message, "err"); }
     } });
     options(); thumb();
     return el("div", { class: "pick" }, el("span", { class: "l" }, f.l),
       el("div", { class: "iconrow" }, el("div", { class: "thumb" }, img), sel,
-        el("button", { type: "button", onclick: () => file.click() }, "Upload new icon…"), file), note);
+        el("button", { type: "button", onclick: () => file.click() }, "Upload new logo…"), file), note);
+  }
+  async function repoHas(path) {
+    try { await gh("/contents/" + path + "?ref=" + BRANCH); return true; } catch (e) { if (e.status === 404) return false; throw e; }
   }
   async function uploadIcon(picked) {
-    const m = /\.(svg|png|webp|jpe?g)$/i.exec(picked.name);
-    if (!m) throw new Error("Use an SVG, PNG, WebP or JPG file.");
-    if (picked.size > 1024 * 1024) throw new Error("Icons must be under 1 MB.");
-    const ext = m[1].toLowerCase() === "jpeg" ? "jpg" : m[1].toLowerCase();
-    const key = picked.name.replace(/\.[^.]+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-    if (!key) throw new Error("Give the file a name made of letters or numbers.");
-    if (RESERVED.has(key) || icons[key]) throw new Error("An icon or asset called \"" + key + "\" already exists. Rename the file and try again.");
-    const path = "assets/img/" + key + "." + ext;
-    let sha;
-    try { sha = (await gh("/contents/" + path + "?ref=" + BRANCH)).sha; } catch (e) { if (e.status !== 404) throw e; }
-    if (sha && !confirm(path + " already exists in the repository. Replace it?")) return null;
-    const bytes = new Uint8Array(await picked.arrayBuffer());
+    if (!/^image\//.test(picked.type) && !/\.(svg|png|webp|jpe?g|gif)$/i.test(picked.name)) throw new Error("Pick an image file (SVG, PNG, WebP or JPG).");
+    if (picked.size > 10 * 1024 * 1024) throw new Error("Pick an image under 10 MB.");
+    const out = await shrink(picked, 512);   // a logo only needs to be small
+    if (out.blob.size > 1024 * 1024) throw new Error("The logo is still " + (out.blob.size / 1048576).toFixed(1) + " MB after shrinking. Use a simpler image.");
+    const base = picked.name.replace(/\.[^.]+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "logo";
+    let key = base, n = 1;
+    while (RESERVED.has(key) || icons[key] || await repoHas("assets/img/" + key + "." + out.ext)) key = base + "-" + (++n);   // never overwrite anything
+    const path = "assets/img/" + key + "." + out.ext;
+    const bytes = new Uint8Array(await out.blob.arrayBuffer());
     let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
     const b64 = btoa(bin);
-    const body = { message: "assets: add cover icon " + key + " via admin page", content: b64, branch: BRANCH };
-    if (sha) body.sha = sha;
-    await gh("/contents/" + path, { method: "PUT", body: JSON.stringify(body) });
+    await gh("/contents/" + path, { method: "PUT", body: JSON.stringify({ message: "assets: add logo " + key + " via admin page", content: b64, branch: BRANCH }) });
     adminAssets[key] = path;
-    icons[key] = { path, preview: "data:" + (picked.type || "image/" + ext) + ";base64," + b64 };
+    icons[key] = { path, preview: "data:" + out.type + ";base64," + b64 };
     touch();
     return key;
   }
 
   /* Cover image: a picture for the project's card. It is shrunk in the browser (max 1200 px wide, WebP) and committed
      to assets/img/covers/ right away; the project keeps its path once you press Save to GitHub. */
-  async function shrink(picked) {
+  async function shrink(picked, maxWidth) {
     if (/svg/.test(picked.type) || /\.svg$/i.test(picked.name)) return { blob: picked, ext: "svg", type: "image/svg+xml" };
     const url = URL.createObjectURL(picked);
     try {
       const im = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => bad(new Error("The browser could not read that file as an image.")); i.src = url; });
-      const k = Math.min(1, 1200 / im.naturalWidth);
+      const k = Math.min(1, (maxWidth || 1200) / im.naturalWidth);
       const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(im.naturalWidth * k)); c.height = Math.max(1, Math.round(im.naturalHeight * k));
       c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
       let blob = await new Promise(r => c.toBlob(r, "image/webp", 0.85)), ext = "webp";
@@ -389,7 +387,7 @@ a { color: var(--amber); }
     { k: "exp", l: "Belongs to", t: "select", options: expOptions },
     { k: "role", l: "Your role", h: "Leave empty to hide it on the card." },
     { k: "start", l: "Start (e.g. Jun 2026)" }, { k: "end", l: "End (e.g. Aug 2026 or Present)" },
-    { k: "logo", l: "Cover icon", t: "cover", h: "Shown on the project's card. Pick an icon, or upload a new one (SVG, PNG or WebP, under 1 MB). An upload is committed to assets/img right away; press Save to GitHub to use it on the site." },
+    { k: "logo", l: "Logo", t: "cover", h: "A small logo shown in the middle of the project's card. Pick one from the list, or press Upload new logo… and choose any image (SVG, PNG, WebP or JPG; big ones are shrunk automatically and named for you). An upload is committed right away; press Save to GitHub to use it on the site." },
     { k: "cover", l: "Cover image", t: "photo", h: "A picture for the project's card on the Projects page. It replaces the icon and the coloured tile. Use a wide picture (about 5:2) for the best fit. JPG, PNG, WebP or SVG; big pictures are shrunk to 1200 px wide and saved as WebP. The image is committed right away; press Save to GitHub to use it on the site." },
     { k: "hue", l: "Card colour (hue 0–360)", t: "num" },
     { k: "desc", l: "Description", t: "area" },

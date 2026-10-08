@@ -9,7 +9,7 @@ import base64, pathlib, re
 
 ROOT = pathlib.Path(__file__).parent
 OUT = ROOT / "dist" / "index.html"
-MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".pdf": "application/pdf", ".webp": "image/webp"}
+MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".pdf": "application/pdf", ".webp": "image/webp", ".svg": "image/svg+xml"}
 
 def data_uri(rel):
     p = ROOT / rel
@@ -23,8 +23,8 @@ html = html.replace('<link rel="stylesheet" href="css/style.css">', f"<style>\n{
 def inline_js(m):
     src = m.group(1)
     code = (ROOT / src).read_text(encoding="utf-8")
-    if src.endswith("content.js"):
-        code = re.sub(r'"(assets/[^"]+\.(?:jpg|jpeg|png|pdf|webp))"', lambda a: '"' + data_uri(a.group(1)) + '"', code)
+    if src.endswith("content.js") or src.endswith("content.admin.js"):
+        code = re.sub(r'"(assets/[^"]+\.(?:jpg|jpeg|png|pdf|webp|svg))"', lambda a: '"' + data_uri(a.group(1)) + '"', code)
     return "<script>\n" + code.replace("</script", "<\\/script") + "\n</script>"
 
 html = re.sub(r'<script src="(js/[^"]+)"></script>', inline_js, html)

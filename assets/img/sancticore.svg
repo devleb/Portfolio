@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256" role="img" aria-label="SanctiCore">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2459e6"/><stop offset="1" stop-color="#1a45c4"/></linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dce6ff"/></linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="13" fill="url(#tile)"/>
+  <path d="M32 11 L50 17.5 V32.5 C50 43.5 42.5 51 32 55 C21.5 51 14 43.5 14 32.5 V17.5 Z" fill="url(#shield)"/>
+  <path d="M23.5 32.5 L29.5 38.5 L41 26" fill="none" stroke="#1d4ed8" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

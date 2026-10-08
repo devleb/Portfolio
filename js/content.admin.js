@@ -330,9 +330,9 @@ Object.assign(window.CONTENT, {
         "Scheduled ingestion and deduplication of sanctions lists",
         "PostgreSQL database (Supabase)"
       ],
-      "hue": 25,
+      "hue": 220,
       "sections": [],
-      "logo": ""
+      "logo": "sancticore"
     },
     {
       "title": "Market data tracker",

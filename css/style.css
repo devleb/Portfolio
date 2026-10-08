@@ -341,9 +341,13 @@ button, input, textarea { font: inherit; color: inherit; }
 .empty { text-align: left; }
 .cover.has-logo { background:
     radial-gradient(circle 150px at 50% 55%, rgba(255,255,255,.95), rgba(255,255,255,0) 72%),
-    linear-gradient(160deg, #efe6f7, #d9c7ea 80%); }
+    linear-gradient(160deg, hsl(var(--h) 55% 95%), hsl(var(--h) 40% 83%)); }
 .cover.has-logo::before { opacity: .35; }
-.cover-logo { position: absolute; left: 50%; top: 50%; width: auto; height: 74%; transform: translate(-50%, -50%); filter: drop-shadow(0 4px 14px rgba(106,27,143,.28)); }
+/* a project's own picture (set with the Cover image field in the admin page) fills the whole cover */
+.cover.has-photo { background: #0b1022; }
+.cover.has-photo::before { display: none; }
+.cover-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cover-logo { position: absolute; left: 50%; top: 50%; width: auto; height: 74%; transform: translate(-50%, -50%); filter: drop-shadow(0 4px 14px hsl(var(--h) 60% 30% / .28)); }
 .eco { list-style: none; margin: 6px 0 4px; padding: 0; display: grid; grid-template-columns: 1fr; gap: 8px; }
 .eco li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-md); background: rgba(64,190,255,.07); border: 1px solid rgba(64,190,255,.2); }
 .eco-ico { width: 32px; height: 32px; flex: none; border-radius: 9px; display: grid; place-items: center; background: rgba(64,190,255,.15); color: #7fd4ff; }

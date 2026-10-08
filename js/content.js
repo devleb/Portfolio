@@ -9,7 +9,8 @@ window.ASSETS = {
   cv: "assets/cv/Georges-Matta-CV.pdf",
   cvFileName: "Georges-Matta-CV.pdf",
   eye: "assets/img/dynamic-eye.webp",
-  eyeToken: "assets/img/dynamic-eye-token.webp"
+  eyeToken: "assets/img/dynamic-eye-token.webp",
+  sancticore: "assets/img/sancticore.svg"
 };
 
 window.CONTENT = {
@@ -196,7 +197,8 @@ window.CONTENT = {
         { name: "Source ingestion", kind: "Built into SanctiCore", icon: "async", text: "Scheduled polling of each official list: OFAC every 4 hours, the others daily." }
       ],
       tasks: ["Project planning and task breakdown", "Delivery of the search, screening and admin features", "Scheduled ingestion and deduplication of sanctions lists", "PostgreSQL database (Supabase)"],
-      hue: 25
+      logo: "sancticore",
+      hue: 220
     },
     {
       title: "Market data tracker",

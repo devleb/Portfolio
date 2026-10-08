@@ -571,7 +571,7 @@
                 <button type="button" class="pg-close" aria-label="${esc(t("Close"))}">${icon("close")}</button>
               </div>
               <button type="button" class="pg pg-cover" aria-expanded="false" aria-controls="pg-${key}" aria-label="${esc(t("Open project {name}", { name: p.title }))}">
-                <span class="cover${p.logo ? " has-logo" : ""}" style="--h:${p.hue}" aria-hidden="true">${p.logo && A[p.logo] ? `<img class="cover-logo" src="${A[p.logo]}" alt="">` : `<span>${esc(initials)}</span>`}</span>
+                <span class="cover${p.cover ? " has-photo" : p.logo ? " has-logo" : ""}" style="--h:${p.hue}" aria-hidden="true">${p.cover ? `<img class="cover-photo" src="${esc(p.cover)}" alt="" loading="lazy" decoding="async">` : p.logo && A[p.logo] ? `<img class="cover-logo" src="${A[p.logo]}" alt="">` : `<span>${esc(initials)}</span>`}</span>
                 <span class="cover-info">
                   <span class="cv-title">${esc(p.title)}</span>
                   ${meta.length ? `<span class="cv-meta">${esc(meta.join(" \u00b7 "))}</span>` : ""}

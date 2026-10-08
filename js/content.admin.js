@@ -36,6 +36,16 @@ Object.assign(window.CONTENT, {
           "pandas",
           "Plotly"
         ]
+      },
+      {
+        "title": "Reliability & recovery",
+        "text": "Backups, failover clustering, replication and disaster recovery, with alerting and health checks.",
+        "tech": [
+          "Backup Exec,",
+          "Failover clustering,",
+          "SQL Server",
+          "PostgreSQL"
+        ]
       }
     ],
     "exploring": "Offline Arabic + English retrieval-augmented generation with local LLMs (Ollama, LM Studio, AnythingLLM)."
